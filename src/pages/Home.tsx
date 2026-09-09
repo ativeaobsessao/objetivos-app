@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoals } from '../hooks/useDomain';
 import { MobileLayout } from '../components/MobileLayout';
-import { PWAInstallButton } from '../components/PWAInstallButton';
 import { Plus } from 'lucide-react';
 
 export default function Home() {
@@ -32,7 +31,6 @@ export default function Home() {
     <MobileLayout className="p-6">
       <header className="flex justify-between items-center py-6 mb-4">
         <h1 className="text-3xl font-bold tracking-tight">Objetivos</h1>
-        <PWAInstallButton />
       </header>
 
       <main className="flex-1 flex flex-col gap-4">

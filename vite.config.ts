@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
 import {defineConfig, Plugin} from 'vite';
-import { VitePWA } from 'vite-plugin-pwa';
 
 // LINT.IfChange(aistudio_media_plugin)
 function aistudioMediaPlugin(): Plugin {
@@ -70,46 +69,7 @@ export default defineConfig(() => {
     plugins: [
       react(), 
       tailwindcss(), 
-      aistudioMediaPlugin(),
-      VitePWA({
-        registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
-        manifest: {
-          id: '/',
-          name: 'Objetivos',
-          short_name: 'Objetivos',
-          description: 'Acompanhe seus objetivos diariamente',
-          theme_color: '#f9fafb',
-          background_color: '#f9fafb',
-          display: 'standalone',
-          start_url: '/',
-          scope: '/',
-          icons: [
-            {
-              src: '/pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png',
-              purpose: 'any'
-            },
-            {
-              src: '/pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any'
-            },
-            {
-              src: '/pwa-maskable-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable'
-            }
-          ]
-        },
-        devOptions: {
-          enabled: true,
-          type: 'module',
-        }
-      })
+      aistudioMediaPlugin()
     ],
     resolve: {
       alias: {
