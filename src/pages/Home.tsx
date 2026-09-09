@@ -3,10 +3,19 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useGoals } from '../hooks/useDomain';
 import { MobileLayout } from '../components/MobileLayout';
 import { Plus } from 'lucide-react';
+import { UserMenu } from '../components/UserMenu';
+import { domainService } from '../services/domainService';
 
 export default function Home() {
-  const { goals, loading } = useGoals();
+  const { goals, loading, reload } = useGoals();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Run migration if needed
+    domainService.migrateLocalData().then(() => {
+      reload();
+    });
+  }, []);
 
   useEffect(() => {
     if (!loading && goals.length > 0) {
@@ -31,6 +40,7 @@ export default function Home() {
     <MobileLayout className="p-6">
       <header className="flex justify-between items-center py-6 mb-4">
         <h1 className="text-3xl font-bold tracking-tight">Objetivos</h1>
+        <UserMenu />
       </header>
 
       <main className="flex-1 flex flex-col gap-4">

@@ -1,0 +1,85 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { MobileLayout } from '../components/MobileLayout';
+import { Lock, KeyRound } from 'lucide-react';
+
+export default function ResetPassword() {
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Listen for hash fragment from supabase reset password email
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event == "PASSWORD_RECOVERY") {
+        // We allow the user to see the form
+      }
+    });
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      alert('Senha atualizada com sucesso!');
+      navigate('/', { replace: true });
+    } catch (err: any) {
+      setError(err.message || 'Erro ao atualizar senha');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <MobileLayout className="p-6 justify-center">
+      <div className="w-full max-w-sm mx-auto">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-6">
+            <KeyRound className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Nova Senha
+          </h1>
+          <p className="text-gray-500 mt-2">
+            Digite sua nova senha abaixo.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Lock className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Sua nova senha"
+                minLength={6}
+                className="w-full pl-11 pr-4 py-4 bg-white border border-gray-200 rounded-2xl outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-all shadow-sm"
+              />
+            </div>
+          </div>
+
+          {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-xl">{error}</div>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 px-4 bg-gray-900 text-white rounded-2xl font-medium active:scale-95 transition-transform disabled:opacity-70"
+          >
+            {loading ? 'Aguarde...' : 'Salvar Nova Senha'}
+          </button>
+        </form>
+      </div>
+    </MobileLayout>
+  );
+}

@@ -7,6 +7,7 @@ import { ArrowLeft, MoreHorizontal } from 'lucide-react';
 import { formatLocal, parseLocal } from '../utils/dates';
 import { GoalTasks } from '../components/GoalTasks';
 import { GoalCalendar } from '../components/GoalCalendar';
+import { UserMenu } from '../components/UserMenu';
 
 export default function ObjectiveDetail() {
   const { id } = useParams();
@@ -41,9 +42,12 @@ export default function ObjectiveDetail() {
         <button onClick={() => navigate('/')} className="p-2 -ml-2 text-gray-900 active:bg-gray-100 rounded-full transition-colors">
           <ArrowLeft className="w-6 h-6" />
         </button>
-        <button onClick={() => setShowMenu(true)} className="p-2 -mr-2 text-gray-900 active:bg-gray-100 rounded-full transition-colors">
-          <MoreHorizontal className="w-6 h-6" />
-        </button>
+        <div className="flex items-center gap-2">
+          <UserMenu />
+          <button onClick={() => setShowMenu(true)} className="p-2 -mr-2 text-gray-900 active:bg-gray-100 rounded-full transition-colors">
+            <MoreHorizontal className="w-6 h-6" />
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 flex flex-col">
