@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Task } from '../types';
 import { domainService } from '../services/domainService';
-import { CheckSquare, Square, Plus, Edit2, Check, X } from 'lucide-react';
+import { CheckSquare, Square, Plus, Edit2, Check, X, Trash2 } from 'lucide-react';
+import { getTodayLocal } from '../utils/dates';
 
 export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: Task[], onUpdate: () => void }) {
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -11,9 +12,26 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
   const [isSaving, setIsSaving] = useState(false);
 
   const handleToggle = async (task: Task) => {
-    // optimistic update could go here
-    await domainService.toggleTask(task.id, !task.completed);
+    const isCompleting = !task.completed;
+    const today = getTodayLocal();
+    
+    let linkDate = undefined;
+    if (isCompleting) {
+      const linkToToday = window.confirm('Integrar a conclusão desta tarefa com o dia de hoje no calendário?');
+      if (linkToToday) {
+        linkDate = today;
+      }
+    }
+
+    await domainService.toggleTask(task.id, isCompleting, linkDate);
     onUpdate();
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (window.confirm('Excluir esta tarefa?')) {
+      await domainService.deleteTaskFromGoal(goalId, taskId);
+      onUpdate();
+    }
   };
 
   const handleAddTask = async (e: React.FormEvent) => {
@@ -92,6 +110,13 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
                 title="Editar"
               >
                 <Edit2 className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={() => handleDeleteTask(task.id)} 
+                className="p-1.5 text-gray-300 hover:text-red-500 active:bg-red-50 rounded-lg transition-colors"
+                title="Excluir"
+              >
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           )

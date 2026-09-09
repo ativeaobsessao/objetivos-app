@@ -13,6 +13,7 @@ export interface Task {
   id: string;
   title: string;
   completed: boolean;
+  completedDate?: string; // YYYY-MM-DD
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
 }

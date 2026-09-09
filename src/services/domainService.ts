@@ -100,6 +100,7 @@ export const domainService = {
           id: t.id,
           title: t.title,
           completed: t.completed,
+          completedDate: t.completed_date,
           createdAt: t.created_at,
           updatedAt: t.updated_at
         }));
@@ -154,14 +155,21 @@ export const domainService = {
     };
   },
   
-  toggleTask: async (taskId: string, completed: boolean) => {
-    const { error } = await supabase.from('tasks').update({ completed, updated_at: new Date().toISOString() }).eq('id', taskId);
+  toggleTask: async (taskId: string, completed: boolean, date?: string) => {
+    const { error } = await supabase.from('tasks').update({ 
+      completed, 
+      completed_date: completed ? date : null,
+      updated_at: new Date().toISOString() 
+    }).eq('id', taskId);
     if (error) throw error;
   },
 
   deleteTaskFromGoal: async (goalId: string, taskId: string) => {
-    const { error } = await supabase.from('goal_task_links').delete().match({ goal_id: goalId, task_id: taskId });
-    if (error) throw error;
+    const { error: linkError } = await supabase.from('goal_task_links').delete().match({ goal_id: goalId, task_id: taskId });
+    if (linkError) throw linkError;
+    
+    const { error: taskError } = await supabase.from('tasks').delete().eq('id', taskId);
+    if (taskError) throw taskError;
   },
 
   // Marks
