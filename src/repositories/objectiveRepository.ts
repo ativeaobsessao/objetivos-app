@@ -1,61 +1,133 @@
+import { supabase } from '../lib/supabase';
 import { Objective, ObjectiveActivity } from '../types';
 
-const OBJECTIVES_KEY = 'pwa_objectives';
-const ACTIVITIES_KEY = 'pwa_objective_activities';
-
 export const objectiveRepository = {
-  getObjectives: (): Objective[] => {
-    const data = localStorage.getItem(OBJECTIVES_KEY);
-    return data ? JSON.parse(data) : [];
-  },
-
-  getObjective: (id: string): Objective | undefined => {
-    return objectiveRepository.getObjectives().find((o) => o.id === id);
-  },
-
-  saveObjective: (objective: Objective): void => {
-    const objectives = objectiveRepository.getObjectives();
-    const existingIndex = objectives.findIndex((o) => o.id === objective.id);
-    if (existingIndex >= 0) {
-      objectives[existingIndex] = objective;
-    } else {
-      objectives.push(objective);
+  getObjectives: async (): Promise<Objective[]> => {
+    const { data, error } = await supabase
+      .from('objectives')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching objectives:', error);
+      return [];
     }
-    localStorage.setItem(OBJECTIVES_KEY, JSON.stringify(objectives));
+    return data.map(mapObjectiveFromDB);
   },
 
-  deleteObjective: (id: string): void => {
-    const objectives = objectiveRepository.getObjectives().filter((o) => o.id !== id);
-    localStorage.setItem(OBJECTIVES_KEY, JSON.stringify(objectives));
-    
-    // Also delete activities
-    const activities = objectiveRepository.getActivities();
-    const filteredActivities = activities.filter((a) => a.objectiveId !== id);
-    localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(filteredActivities));
+  getObjective: async (id: string): Promise<Objective | undefined> => {
+    const { data, error } = await supabase
+      .from('objectives')
+      .select('*')
+      .eq('id', id)
+      .single();
+      
+    if (error || !data) return undefined;
+    return mapObjectiveFromDB(data);
   },
 
-  getActivities: (): ObjectiveActivity[] => {
-    const data = localStorage.getItem(ACTIVITIES_KEY);
-    return data ? JSON.parse(data) : [];
-  },
-
-  getActivitiesByObjective: (objectiveId: string): ObjectiveActivity[] => {
-    return objectiveRepository.getActivities().filter((a) => a.objectiveId === objectiveId);
-  },
-
-  saveActivity: (activity: ObjectiveActivity): void => {
-    const activities = objectiveRepository.getActivities();
-    const existingIndex = activities.findIndex((a) => a.id === activity.id);
-    if (existingIndex >= 0) {
-      activities[existingIndex] = activity;
-    } else {
-      activities.push(activity);
+  saveObjective: async (objective: Objective): Promise<void> => {
+    const { error } = await supabase
+      .from('objectives')
+      .upsert(mapObjectiveToDB(objective));
+      
+    if (error) {
+      console.error('Error saving objective:', error);
+      throw error;
     }
-    localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(activities));
   },
 
-  deleteActivity: (id: string): void => {
-    const activities = objectiveRepository.getActivities().filter((a) => a.id !== id);
-    localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(activities));
+  deleteObjective: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('objectives')
+      .delete()
+      .eq('id', id);
+      
+    if (error) {
+      console.error('Error deleting objective:', error);
+      throw error;
+    }
+  },
+
+  getActivitiesByObjective: async (objectiveId: string): Promise<ObjectiveActivity[]> => {
+    const { data, error } = await supabase
+      .from('objective_activities')
+      .select('*')
+      .eq('objective_id', objectiveId)
+      .order('date', { ascending: true });
+      
+    if (error) {
+      console.error('Error fetching activities:', error);
+      return [];
+    }
+    return data.map(mapActivityFromDB);
+  },
+
+  saveActivity: async (activity: ObjectiveActivity): Promise<void> => {
+    const { error } = await supabase
+      .from('objective_activities')
+      .upsert(mapActivityToDB(activity));
+      
+    if (error) {
+      console.error('Error saving activity:', error);
+      throw error;
+    }
+  },
+
+  deleteActivity: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('objective_activities')
+      .delete()
+      .eq('id', id);
+      
+    if (error) {
+      console.error('Error deleting activity:', error);
+      throw error;
+    }
   },
 };
+
+// Mappers to convert between CamelCase (Frontend) and SnakeCase (Supabase DB)
+function mapObjectiveFromDB(row: any): Objective {
+  return {
+    id: row.id,
+    title: row.title,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    status: row.status,
+    createdAt: row.created_at,
+  };
+}
+
+function mapObjectiveToDB(obj: Objective): any {
+  return {
+    id: obj.id,
+    title: obj.title,
+    start_date: obj.startDate,
+    end_date: obj.endDate,
+    status: obj.status,
+    created_at: obj.createdAt,
+  };
+}
+
+function mapActivityFromDB(row: any): ObjectiveActivity {
+  return {
+    id: row.id,
+    objectiveId: row.objective_id,
+    date: row.date,
+    type: row.type,
+    description: row.description,
+    createdAt: row.created_at,
+  };
+}
+
+function mapActivityToDB(act: ObjectiveActivity): any {
+  return {
+    id: act.id,
+    objective_id: act.objectiveId,
+    date: act.date,
+    type: act.type,
+    description: act.description,
+    created_at: act.createdAt,
+  };
+}

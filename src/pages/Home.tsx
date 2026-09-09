@@ -6,7 +6,7 @@ import { Plus } from 'lucide-react';
 import { formatLocal, parseLocal } from '../utils/dates';
 
 export default function Home() {
-  const { objectives } = useObjectives();
+  const { objectives, loading } = useObjectives();
 
   return (
     <MobileLayout className="p-6">
@@ -16,7 +16,11 @@ export default function Home() {
       </header>
 
       <main className="flex-1 flex flex-col gap-4">
-        {objectives.length === 0 ? (
+        {loading ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+             <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-gray-900 animate-spin mb-4" />
+          </div>
+        ) : objectives.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
             <h2 className="text-xl font-medium text-gray-900 mb-2">Acompanhe o que importa.</h2>
             <p className="text-sm text-gray-500 mb-8">Nenhum objetivo ativo no momento.</p>

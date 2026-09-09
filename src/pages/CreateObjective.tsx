@@ -11,8 +11,9 @@ export default function CreateObjective() {
   const [startDate, setStartDate] = useState(getTodayLocal());
   const [endDate, setEndDate] = useState(addDaysLocal(getTodayLocal(), 29)); // 30 days total inclusive
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim()) {
       setError('O objetivo não pode ficar vazio.');
       return;
@@ -22,8 +23,15 @@ export default function CreateObjective() {
       return;
     }
     
-    objectiveService.createObjective(title.trim(), startDate, endDate);
-    navigate('/', { replace: true });
+    setIsSubmitting(true);
+    try {
+      await objectiveService.createObjective(title.trim(), startDate, endDate);
+      navigate('/', { replace: true });
+    } catch (err) {
+      console.error(err);
+      setError('Ocorreu um erro ao salvar o objetivo.');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -86,9 +94,10 @@ export default function CreateObjective() {
       <footer className="mt-8 mb-4">
         <button
           onClick={handleSave}
-          className="w-full bg-gray-900 text-white font-medium text-lg py-4 rounded-2xl active:scale-95 transition-transform"
+          disabled={isSubmitting}
+          className="w-full bg-gray-900 text-white font-medium text-lg py-4 rounded-2xl active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100"
         >
-          Criar objetivo
+          {isSubmitting ? 'Salvando...' : 'Criar objetivo'}
         </button>
       </footer>
     </MobileLayout>

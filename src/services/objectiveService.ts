@@ -2,7 +2,7 @@ import { objectiveRepository } from '../repositories/objectiveRepository';
 import { Objective, ObjectiveActivity } from '../types';
 
 export const objectiveService = {
-  createObjective: (title: string, startDate: string, endDate: string): Objective => {
+  createObjective: async (title: string, startDate: string, endDate: string): Promise<Objective> => {
     const objective: Objective = {
       id: crypto.randomUUID(),
       title,
@@ -11,35 +11,35 @@ export const objectiveService = {
       status: 'active',
       createdAt: new Date().toISOString(),
     };
-    objectiveRepository.saveObjective(objective);
+    await objectiveRepository.saveObjective(objective);
     return objective;
   },
 
-  getAllObjectives: (): Objective[] => {
-    return objectiveRepository.getObjectives();
+  getAllObjectives: async (): Promise<Objective[]> => {
+    return await objectiveRepository.getObjectives();
   },
 
-  getObjective: (id: string): Objective | undefined => {
-    return objectiveRepository.getObjective(id);
+  getObjective: async (id: string): Promise<Objective | undefined> => {
+    return await objectiveRepository.getObjective(id);
   },
 
-  updateObjective: (id: string, updates: Partial<Objective>): Objective | undefined => {
-    const obj = objectiveRepository.getObjective(id);
+  updateObjective: async (id: string, updates: Partial<Objective>): Promise<Objective | undefined> => {
+    const obj = await objectiveRepository.getObjective(id);
     if (!obj) return undefined;
     const updated = { ...obj, ...updates };
-    objectiveRepository.saveObjective(updated);
+    await objectiveRepository.saveObjective(updated);
     return updated;
   },
 
-  deleteObjective: (id: string): void => {
-    objectiveRepository.deleteObjective(id);
+  deleteObjective: async (id: string): Promise<void> => {
+    await objectiveRepository.deleteObjective(id);
   },
 
-  getActivities: (objectiveId: string): ObjectiveActivity[] => {
-    return objectiveRepository.getActivitiesByObjective(objectiveId);
+  getActivities: async (objectiveId: string): Promise<ObjectiveActivity[]> => {
+    return await objectiveRepository.getActivitiesByObjective(objectiveId);
   },
 
-  addActivity: (objectiveId: string, date: string, description?: string): ObjectiveActivity => {
+  addActivity: async (objectiveId: string, date: string, description?: string): Promise<ObjectiveActivity> => {
     const activity: ObjectiveActivity = {
       id: crypto.randomUUID(),
       objectiveId,
@@ -48,11 +48,11 @@ export const objectiveService = {
       description,
       createdAt: new Date().toISOString(),
     };
-    objectiveRepository.saveActivity(activity);
+    await objectiveRepository.saveActivity(activity);
     return activity;
   },
   
-  deleteActivity: (id: string): void => {
-    objectiveRepository.deleteActivity(id);
+  deleteActivity: async (id: string): Promise<void> => {
+    await objectiveRepository.deleteActivity(id);
   }
 };

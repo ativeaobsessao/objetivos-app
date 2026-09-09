@@ -10,9 +10,17 @@ import { motion, AnimatePresence } from 'motion/react';
 export default function ObjectiveDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { objective, activities, reload } = useObjectiveDetail(id);
+  const { objective, activities, loading, reload } = useObjectiveDetail(id);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+
+  if (loading) return (
+    <MobileLayout>
+      <div className="flex-1 flex flex-col items-center justify-center min-h-screen text-center px-4">
+         <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-gray-900 animate-spin mb-4" />
+      </div>
+    </MobileLayout>
+  );
 
   if (!objective) return null; // Or a loading/not found state
 
@@ -171,18 +179,30 @@ export default function ObjectiveDetail() {
 function ActivitySheet({ date, objective, activities, onClose, onProgress }: { date: string, objective: any, activities: any[], onClose: () => void, onProgress: () => void }) {
   const [note, setNote] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isDone = activities.length > 0;
 
-  const handleMark = () => {
-    objectiveService.addActivity(objective.id, date, note.trim() || undefined);
-    onProgress();
-    setNote('');
-    setIsAdding(false);
+  const handleMark = async () => {
+    setIsSubmitting(true);
+    try {
+      await objectiveService.addActivity(objective.id, date, note.trim() || undefined);
+      onProgress();
+      setNote('');
+      setIsAdding(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleRemove = (id: string) => {
-    objectiveService.deleteActivity(id);
-    onProgress();
+  const handleRemove = async (id: string) => {
+    try {
+      await objectiveService.deleteActivity(id);
+      onProgress();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -246,16 +266,18 @@ function ActivitySheet({ date, objective, activities, onClose, onProgress }: { d
               {objective.status === 'active' && (
                 <button
                   onClick={() => handleMark()}
-                  className="w-full bg-red-500 text-white font-medium text-lg py-4 rounded-2xl active:scale-95 transition-transform shadow-sm"
+                  disabled={isSubmitting}
+                  className="w-full bg-red-500 text-white font-medium text-lg py-4 rounded-2xl active:scale-95 transition-transform shadow-sm disabled:opacity-50 disabled:active:scale-100"
                 >
-                  Marcar progresso
+                  {isSubmitting ? 'Marcando...' : 'Marcar progresso'}
                 </button>
               )}
               
               {!isAdding && objective.status === 'active' && (
                 <button 
                   onClick={() => setIsAdding(true)}
-                  className="mt-6 text-sm font-medium text-gray-500 block text-center w-full"
+                  disabled={isSubmitting}
+                  className="mt-6 text-sm font-medium text-gray-500 block text-center w-full disabled:opacity-50"
                 >
                   Registrar atividade específica
                 </button>
@@ -270,21 +292,24 @@ function ActivitySheet({ date, objective, activities, onClose, onProgress }: { d
                 value={note}
                 onChange={e => setNote(e.target.value)}
                 autoFocus
+                disabled={isSubmitting}
                 placeholder="Ex: Pesquisei 10 concorrentes"
-                className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 outline-none focus:border-gray-900 min-h-[100px] resize-none"
+                className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 outline-none focus:border-gray-900 min-h-[100px] resize-none disabled:opacity-50"
               />
               <div className="flex gap-3 mt-4">
                 <button 
                   onClick={() => setIsAdding(false)}
-                  className="flex-1 py-3 font-medium text-gray-600 bg-gray-100 rounded-xl"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 font-medium text-gray-600 bg-gray-100 rounded-xl disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button 
                   onClick={handleMark}
-                  className="flex-1 py-3 font-medium text-white bg-gray-900 rounded-xl"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 font-medium text-white bg-gray-900 rounded-xl disabled:opacity-50"
                 >
-                  Registrar
+                  {isSubmitting ? 'Registrando...' : 'Registrar'}
                 </button>
               </div>
             </div>
@@ -298,27 +323,49 @@ function ActivitySheet({ date, objective, activities, onClose, onProgress }: { d
 function ObjectiveMenu({ objective, onClose, onUpdate, onDelete }: { objective: any, onClose: () => void, onUpdate: () => void, onDelete: () => void }) {
   const [showEditEnd, setShowEditEnd] = useState(false);
   const [newEnd, setNewEnd] = useState(objective.endDate);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleUpdateEnd = () => {
+  const handleUpdateEnd = async () => {
     if (newEnd >= objective.startDate) {
-      objectiveService.updateObjective(objective.id, { endDate: newEnd });
-      onUpdate();
-      onClose();
+      setIsSubmitting(true);
+      try {
+        await objectiveService.updateObjective(objective.id, { endDate: newEnd });
+        onUpdate();
+        onClose();
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (confirm('Encerrar objetivo? Você poderá continuar visualizando seu progresso, mas não poderá registrar novas atividades.')) {
-      objectiveService.updateObjective(objective.id, { status: 'completed' });
-      onUpdate();
-      onClose();
+      setIsSubmitting(true);
+      try {
+        await objectiveService.updateObjective(objective.id, { status: 'completed' });
+        onUpdate();
+        onClose();
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (confirm('Excluir objetivo? Todo o histórico desse objetivo será removido. Essa ação não pode ser desfeita.')) {
-      objectiveService.deleteObjective(objective.id);
-      onDelete();
+      setIsSubmitting(true);
+      try {
+        await objectiveService.deleteObjective(objective.id);
+        onDelete();
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
