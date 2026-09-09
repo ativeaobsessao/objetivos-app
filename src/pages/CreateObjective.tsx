@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { objectiveService } from '../services/objectiveService';
+import { domainService } from '../services/domainService';
 import { MobileLayout } from '../components/MobileLayout';
 import { ArrowLeft } from 'lucide-react';
 import { getTodayLocal, addDaysLocal } from '../utils/dates';
@@ -25,8 +25,8 @@ export default function CreateObjective() {
     
     setIsSubmitting(true);
     try {
-      await objectiveService.createObjective(title.trim(), startDate, endDate);
-      navigate('/', { replace: true });
+      const newGoal = await domainService.createGoal(title.trim(), startDate, endDate);
+      navigate(`/objective/${newGoal.id}`, { replace: true });
     } catch (err) {
       console.error(err);
       setError('Ocorreu um erro ao salvar o objetivo.');
@@ -56,8 +56,9 @@ export default function CreateObjective() {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ex: Criar minha primeira VSL"
-            className="w-full text-lg bg-white border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-all placeholder:text-gray-300 shadow-sm"
+            disabled={isSubmitting}
+            placeholder="Ex: Conseguir minha primeira venda"
+            className="w-full text-lg bg-white border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-all placeholder:text-gray-300 shadow-sm disabled:opacity-50"
             autoFocus
           />
         </div>
@@ -67,12 +68,12 @@ export default function CreateObjective() {
           <input
             type="date"
             value={startDate}
+            disabled={isSubmitting}
             onChange={(e) => {
               setStartDate(e.target.value);
-              // auto update end date if not touched? The prompt says standard is 30 days.
               setEndDate(addDaysLocal(e.target.value, 29));
             }}
-            className="w-full text-base bg-white border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 transition-all shadow-sm"
+            className="w-full text-base bg-white border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 transition-all shadow-sm disabled:opacity-50"
           />
         </div>
 
@@ -84,8 +85,9 @@ export default function CreateObjective() {
           <input
             type="date"
             value={endDate}
+            disabled={isSubmitting}
             onChange={(e) => setEndDate(e.target.value)}
-            className="w-full text-base bg-white border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 transition-all shadow-sm"
+            className="w-full text-base bg-white border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 transition-all shadow-sm disabled:opacity-50"
           />
         </div>
 
