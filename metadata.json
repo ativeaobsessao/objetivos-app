@@ -1,6 +1,8 @@
 {
-  "name": "Objetivos",
+  "name": "objetivo-app",
   "description": "Acompanhe diariamente a execução de um objetivo durante um período determinado.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
