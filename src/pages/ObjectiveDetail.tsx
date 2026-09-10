@@ -75,9 +75,10 @@ export default function ObjectiveDetail() {
         </div>
 
         <GoalTasks goalId={goal.id} tasks={tasks} onUpdate={reload} />
-        <GoalAchievements marks={marks} />
+        
 
         <GoalCalendar goal={goal} marks={marks} tasks={tasks} onUpdate={reload} />
+        <GoalAchievements marks={marks} goalEndDate={goal.endDate} />
 
       </main>
 

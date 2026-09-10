@@ -3,15 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { domainService } from '../services/domainService';
 import { MobileLayout } from '../components/MobileLayout';
 import { ArrowLeft } from 'lucide-react';
-import { getTodayLocal, addDaysLocal } from '../utils/dates';
+import { getTodayLocal, addDaysLocal, getDiffDaysLocal } from '../utils/dates';
 
 export default function CreateObjective() {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [startDate, setStartDate] = useState(getTodayLocal());
   const [endDate, setEndDate] = useState(addDaysLocal(getTodayLocal(), 29)); // 30 days total inclusive
+  
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const totalDays = getDiffDaysLocal(startDate, endDate) + 1; // +1 to be inclusive
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -80,7 +83,7 @@ export default function CreateObjective() {
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-end pl-1">
             <label className="text-sm font-medium text-gray-500">Data de término</label>
-            <span className="text-xs text-gray-400">Período inicial: 30 dias</span>
+            <span className="text-xs text-gray-400">Duração: {totalDays > 0 ? totalDays : 0} dias</span>
           </div>
           <input
             type="date"

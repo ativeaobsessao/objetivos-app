@@ -37,6 +37,13 @@ export function getDaysInRange(start: string, end: string): string[] {
   return days;
 }
 
+export function getDiffDaysLocal(start: string, end: string): number {
+  const d1 = parseLocal(start);
+  const d2 = parseLocal(end);
+  const diffTime = d2.getTime() - d1.getTime();
+  return Math.round(diffTime / (1000 * 60 * 60 * 24));
+}
+
 // Check if a date string is before another
 export function isBeforeOrEqual(d1: string, d2: string): boolean {
   return d1 <= d2;

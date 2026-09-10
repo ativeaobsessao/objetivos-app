@@ -1,9 +1,9 @@
 import React from 'react';
 import { GoalMark } from '../types';
-import { parseLocal } from '../utils/dates';
-import { Flame, Zap, Star, Trophy } from 'lucide-react';
+import { parseLocal, getTodayLocal } from '../utils/dates';
+import { Flame, Zap, Star, Trophy, Flag } from 'lucide-react';
 
-export function GoalAchievements({ marks }: { marks: GoalMark[] }) {
+export function GoalAchievements({ marks, goalEndDate }: { marks: GoalMark[], goalEndDate: string }) {
   const dates = [...new Set(marks.map(m => m.date))].sort();
   
   let currentStreak = 0;
@@ -30,6 +30,8 @@ export function GoalAchievements({ marks }: { marks: GoalMark[] }) {
   }
 
   const totalDays = dates.length;
+  const today = getTodayLocal();
+  const isDeadlineReached = today >= goalEndDate;
 
   const achievements = [
     {
@@ -67,6 +69,15 @@ export function GoalAchievements({ marks }: { marks: GoalMark[] }) {
       unlocked: totalDays >= 30,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-100 dark:bg-yellow-900/30'
+    },
+    {
+      id: 'deadline',
+      title: 'Linha de Chegada',
+      description: 'Prazo alcançado',
+      icon: Flag,
+      unlocked: isDeadlineReached,
+      color: 'text-green-500',
+      bgColor: 'bg-green-100 dark:bg-green-900/30'
     }
   ];
 
@@ -77,7 +88,7 @@ export function GoalAchievements({ marks }: { marks: GoalMark[] }) {
       </div>
       
       <div className="bg-white dark:bg-gray-900 dark:border-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {achievements.map((ach) => {
             const Icon = ach.icon;
             return (
