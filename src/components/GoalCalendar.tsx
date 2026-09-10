@@ -70,19 +70,10 @@ export function GoalCalendar({ goal, marks, tasks, onUpdate }: { goal: Goal, mar
   return (
     <section className="mb-10">
       <div className="flex justify-between items-end mb-4">
-        <h2 className="text-xs font-bold tracking-widest text-gray-400 uppercase">Progresso</h2>
+        <h2 className="text-xs font-bold tracking-widest text-gray-400 uppercase">Calendário</h2>
       </div>
 
-      <div className="bg-white dark:bg-gray-900 dark:border-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
-        <ProgressBar label="Geral" current={markedDaysCount} total={totalDays} percent={progressPercent} />
-        <ProgressBar label="Neste Mês" current={markedThisMonth} total={goalDaysThisMonth.length} percent={monthPercent} />
-        <ProgressBar label="Nesta Semana" current={markedThisWeek} total={goalDaysThisWeek.length} percent={weekPercent} />
-      </div>
-
-      <div className="bg-white dark:bg-gray-900 dark:border-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold tracking-widest text-gray-400 uppercase">Calendário</h3>
-        </div>
+      <div className="bg-white dark:bg-gray-900 dark:border-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 mb-8">
         <div className="grid grid-cols-7 gap-y-4 gap-x-2 text-center mb-4">
           {weekdays.map((wd, i) => (
             <span key={i} className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{wd}</span>
@@ -119,6 +110,16 @@ export function GoalCalendar({ goal, marks, tasks, onUpdate }: { goal: Goal, mar
             );
           })}
         </div>
+      </div>
+
+      <div className="flex justify-between items-end mb-4 mt-8">
+        <h2 className="text-xs font-bold tracking-widest text-gray-400 uppercase">Progresso</h2>
+      </div>
+
+      <div className="bg-white dark:bg-gray-900 dark:border-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
+        <ProgressBar label="Geral" current={markedDaysCount} total={totalDays} percent={progressPercent} />
+        <ProgressBar label="Neste Mês" current={markedThisMonth} total={goalDaysThisMonth.length} percent={monthPercent} />
+        <ProgressBar label="Nesta Semana" current={markedThisWeek} total={goalDaysThisWeek.length} percent={weekPercent} />
       </div>
 
       {selectedDate && (
