@@ -5,7 +5,7 @@ import { MobileLayout } from '../components/MobileLayout';
 import { Plus, ChevronRight } from 'lucide-react';
 import { UserMenu } from '../components/UserMenu';
 import { domainService } from '../services/domainService';
-
+import { getDiffDaysLocal, getTodayLocal } from '../utils/dates';
 import { ThemeToggle } from '../components/ThemeToggle';
 
 const QUOTES = [
@@ -81,21 +81,28 @@ export default function Home() {
             </div>
             
             <div className="flex flex-col gap-3">
-              {goals.map((goal: any) => (
-                <Link 
-                  to={`/objective/${goal.id}`} 
-                  key={goal.id} 
-                  className="bg-white dark:bg-gray-900 dark:border-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center active:scale-[0.98] transition-transform"
-                >
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg mb-1">{goal.title}</h3>
-                    <p className="text-gray-500 text-sm">
-                      {goal.taskCount || 0} {goal.taskCount === 1 ? 'tarefa' : 'tarefas'}
-                    </p>
-                  </div>
-                  <ChevronRight className="text-gray-300 w-5 h-5" />
-                </Link>
-              ))}
+              {goals.map((goal: any) => {
+                const totalDays = getDiffDaysLocal(goal.startDate, goal.endDate) + 1;
+                const markCount = goal.markCount || 0;
+                const progressPercent = totalDays > 0 ? Math.round((markCount / totalDays) * 100) : 0;
+                const daysLeft = Math.max(0, totalDays - markCount);
+                
+                return (
+                  <Link 
+                    to={`/objective/${goal.id}`} 
+                    key={goal.id} 
+                    className="bg-white dark:bg-gray-900 dark:border-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center active:scale-[0.98] transition-transform"
+                  >
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg mb-1">{goal.title}</h3>
+                      <p className="text-gray-500 text-sm font-medium">
+                        {progressPercent}% concluído • Faltam {daysLeft} {daysLeft === 1 ? 'dia' : 'dias'}
+                      </p>
+                    </div>
+                    <ChevronRight className="text-gray-300 w-5 h-5" />
+                  </Link>
+                );
+              })}
             </div>
             
             <Link

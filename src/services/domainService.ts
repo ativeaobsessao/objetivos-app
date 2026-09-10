@@ -53,8 +53,8 @@ export const domainService = {
     if (error) throw error;
   },
 
-  getAllGoals: async (): Promise<(Goal & { taskCount: number })[]> => {
-    const { data, error } = await supabase.from('goals').select('*, goal_task_links(count)').order('created_at', { ascending: false });
+  getAllGoals: async (): Promise<(Goal & { taskCount: number, markCount: number })[]> => {
+    const { data, error } = await supabase.from('goals').select('*, goal_task_links(count), marks:goal_marks(count)').order('created_at', { ascending: false });
     if (error) throw error;
     
     return data.map(g => ({
@@ -64,7 +64,8 @@ export const domainService = {
       endDate: g.end_date,
       status: g.status,
       createdAt: g.created_at,
-      taskCount: g.goal_task_links?.[0]?.count || 0
+      taskCount: g.goal_task_links?.[0]?.count || 0,
+      markCount: g.marks?.[0]?.count || 0
     }));
   },
   
