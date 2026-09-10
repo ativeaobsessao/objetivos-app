@@ -31,9 +31,9 @@ export function useGoalView(id: string | undefined) {
   const [marks, setMarks] = useState<GoalMark[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (showLoading = true) => {
     if (!id) return;
-    setLoading(true);
+    if (showLoading) setLoading(true);
     try {
       const data = await domainService.getGoalView(id);
       if (data) {
@@ -46,7 +46,7 @@ export function useGoalView(id: string | undefined) {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [id]);
 

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Task } from '../types';
 import { domainService } from '../services/domainService';
 import { CheckSquare, Square, Plus, Edit2, Check, X, Trash2 } from 'lucide-react';
 import { getTodayLocal } from '../utils/dates';
 
-export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: Task[], onUpdate: () => void }) {
+export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: Task[], onUpdate: (showLoading?: boolean) => void }) {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -13,6 +13,22 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
   const [taskToConfirm, setTaskToConfirm] = useState<Task | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [lastClickTime, setLastClickTime] = useState<Record<string, number>>({});
+  
+  // Optimistic local state for immediate visual feedback
+  const [optimisticTasks, setOptimisticTasks] = useState<Task[]>(tasks);
+
+  useEffect(() => {
+    setOptimisticTasks(tasks);
+  }, [tasks]);
+
+  useEffect(() => {
+    if (taskToConfirm) {
+      const t = setTimeout(() => {
+        setTaskToConfirm(null);
+      }, 2500);
+      return () => clearTimeout(t);
+    }
+  }, [taskToConfirm]);
 
   const handleTaskClick = (task: Task) => {
     if (!task.completed) {
@@ -32,30 +48,31 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
   const handleToggle = async (task: Task) => {
     if (!task.completed) {
       const today = getTodayLocal();
-      // Optimistic update - call onUpdate early if possible, or wait?
-      // Since onUpdate fetches from DB, it's not truly optimistic unless we have a local state,
-      // but let's just show the popup immediately.
+      // Optimistic update
+      setOptimisticTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: true, completedDate: today } : t));
       setTaskToConfirm(task);
+      
       try {
         await domainService.toggleTask(task.id, true, today);
-        onUpdate();
+        onUpdate(false);
       } catch (error) {
         console.error(error);
         alert('Erro ao salvar.');
+        setOptimisticTasks(tasks); // revert
       }
     } else {
+      // Optimistic update
+      setOptimisticTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: false, completedDate: undefined } : t));
+      
       try {
         await domainService.toggleTask(task.id, false, undefined);
-        onUpdate();
+        onUpdate(false);
       } catch (error) {
         console.error(error);
         alert('Erro ao salvar.');
+        setOptimisticTasks(tasks); // revert
       }
     }
-  };
-
-  const closeSuccessPopup = () => {
-    setTaskToConfirm(null);
   };
 
   const handleDeleteRequest = (task: Task) => {
@@ -104,7 +121,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
       <h2 className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-4">Tarefas</h2>
       
       <div className="flex flex-col gap-2">
-        {tasks.map(task => (
+        {optimisticTasks.map(task => (
           editingId === task.id ? (
             <div key={task.id} className="flex items-center gap-2 py-2">
               <input
@@ -188,24 +205,10 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
       </div>
 
       {taskToConfirm && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center" onClick={closeSuccessPopup}>
-          <div 
-            className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 pb-12 sm:pb-6 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3 mb-4 text-green-600">
-              <CheckSquare className="w-8 h-8" />
-              <h3 className="text-xl font-bold text-gray-900">Tarefa concluída!</h3>
-            </div>
-            <p className="text-gray-600 mb-8 font-medium text-lg leading-relaxed">
-              A tarefa foi marcada como feita e salva no dia de hoje em seu calendário.
-            </p>
-            <button
-              onClick={closeSuccessPopup}
-              className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform bg-gray-900 text-white shadow-md"
-            >
-              Entendido
-            </button>
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className="bg-gray-900 text-white px-5 py-3 rounded-full shadow-lg flex items-center gap-3">
+            <CheckSquare className="w-5 h-5 text-green-400" />
+            <span className="font-medium">Salvo no hoje</span>
           </div>
         </div>
       )}
