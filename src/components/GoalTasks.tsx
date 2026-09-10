@@ -10,20 +10,22 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [taskToConfirm, setTaskToConfirm] = useState<Task | null>(null);
 
   const handleToggle = async (task: Task) => {
-    const isCompleting = !task.completed;
-    const today = getTodayLocal();
-    
-    let linkDate = undefined;
-    if (isCompleting) {
-      const linkToToday = window.confirm('Integrar a conclusão desta tarefa com o dia de hoje no calendário?');
-      if (linkToToday) {
-        linkDate = today;
-      }
+    if (!task.completed) {
+      setTaskToConfirm(task);
+    } else {
+      await domainService.toggleTask(task.id, false, undefined);
+      onUpdate();
     }
+  };
 
-    await domainService.toggleTask(task.id, isCompleting, linkDate);
+  const handleConfirmCompletion = async (linkToToday: boolean) => {
+    if (!taskToConfirm) return;
+    const today = getTodayLocal();
+    await domainService.toggleTask(taskToConfirm.id, true, linkToToday ? today : undefined);
+    setTaskToConfirm(null);
     onUpdate();
   };
 
@@ -147,6 +149,34 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
           </button>
         )}
       </div>
+
+      {taskToConfirm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center" onClick={() => setTaskToConfirm(null)}>
+          <div 
+            className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 pb-12 sm:pb-6 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Tarefa concluída!</h3>
+            <p className="text-gray-600 mb-6 font-medium text-lg">
+              Deseja vincular a conclusão desta tarefa ao progresso de hoje no calendário?
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => handleConfirmCompletion(true)}
+                className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform bg-gray-900 text-white shadow-md"
+              >
+                Sim, vincular a hoje
+              </button>
+              <button
+                onClick={() => handleConfirmCompletion(false)}
+                className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform bg-gray-100 text-gray-600 hover:bg-gray-200"
+              >
+                Não, apenas concluir tarefa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

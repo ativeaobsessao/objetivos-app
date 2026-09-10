@@ -64,7 +64,7 @@ export default function ObjectiveDetail() {
             </div>
             
             <div className="flex items-center gap-2 bg-red-50 px-4 py-2.5 rounded-xl border border-red-100">
-              <span className="font-bold tracking-widest text-red-400 uppercase text-xs">Deadline</span>
+              <span className="font-bold tracking-widest text-red-400 uppercase text-xs">Prazo final</span>
               <span className="font-bold text-red-700">{parseLocal(goal.endDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')}</span>
             </div>
           </div>

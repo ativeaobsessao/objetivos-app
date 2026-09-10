@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Goal, GoalMark, Task } from '../types';
-import { getDaysInRange, getTodayLocal, formatLocal } from '../utils/dates';
+import { getDaysInRange, getTodayLocal, formatLocal, parseLocal } from '../utils/dates';
 import { X, Check } from 'lucide-react';
 import { domainService } from '../services/domainService';
 
@@ -9,7 +9,7 @@ export function GoalCalendar({ goal, marks, tasks, onUpdate }: { goal: Goal, mar
 
   const days = getDaysInRange(goal.startDate, goal.endDate);
   const today = getTodayLocal();
-
+  
   const handleDayClick = (date: string) => {
     if (date > today) return; // Cannot mark future days
     setSelectedDate(date);
@@ -19,6 +19,11 @@ export function GoalCalendar({ goal, marks, tasks, onUpdate }: { goal: Goal, mar
   const totalDays = days.length;
   const progressPercent = totalDays > 0 ? Math.round((markedDaysCount / totalDays) * 100) : 0;
 
+  // Calculate padding for the first day of the calendar
+  const startWeekday = parseLocal(goal.startDate).getDay();
+  const emptyCells = Array.from({ length: startWeekday });
+  const weekdays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+
   return (
     <section className="mb-10">
       <div className="flex justify-between items-end mb-4">
@@ -27,30 +32,38 @@ export function GoalCalendar({ goal, marks, tasks, onUpdate }: { goal: Goal, mar
       </div>
 
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-        <div className="grid grid-cols-7 gap-y-4 gap-x-2">
+        <div className="grid grid-cols-7 gap-y-4 gap-x-2 text-center mb-4">
+          {weekdays.map((wd, i) => (
+            <span key={i} className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{wd}</span>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-y-2 gap-x-2">
+          {emptyCells.map((_, i) => (
+            <div key={`empty-${i}`} />
+          ))}
           {days.map((date) => {
             const isFuture = date > today;
             const isToday = date === today;
             const isMarked = marks.some(m => m.markDate === date);
             const hasCompletedTasks = tasks?.some(t => t.completedDate === date);
             
-            // se o dia tem tarefas concluidas vinculadas ou marca manual, o botão ganha destaque vermelho
-            const isActive = isMarked || hasCompletedTasks;
-            
             return (
-              <div key={date} className="flex flex-col items-center">
+              <div key={date} className="flex flex-col items-center justify-center relative h-10 w-full">
                 <button
                   onClick={() => handleDayClick(date)}
                   disabled={isFuture}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                    isFuture ? 'opacity-30 cursor-not-allowed text-gray-200' :
-                    isActive ? 'bg-red-500 text-white shadow-md' :
-                    isToday ? 'border-2 border-gray-900 text-gray-900 font-bold' :
-                    'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all relative ${
+                    isFuture ? 'text-gray-300 cursor-default' :
+                    isMarked ? 'bg-red-500 text-white shadow-sm' :
+                    isToday ? 'text-red-500 font-bold' :
+                    'text-gray-900 font-medium hover:bg-gray-100'
                   }`}
                 >
-                  {isActive ? <X className="w-6 h-6 stroke-[3]" /> : <span className="text-xs font-medium">{date.split('-')[2]}</span>}
+                  {isMarked ? <X className="w-5 h-5 stroke-[3]" /> : <span className="text-[15px]">{date.split('-')[2]}</span>}
                 </button>
+                {!isMarked && hasCompletedTasks && (
+                  <div className="absolute bottom-0 w-1 h-1 bg-gray-400 rounded-full" />
+                )}
               </div>
             );
           })}
@@ -86,9 +99,6 @@ function DayModal({ date, goalId, isMarked, completedTasks, onClose, onUpdate }:
 
   const formattedDate = date.split('-').reverse().join('/');
 
-  // O dia é considerado "feito" se tiver marca manual ou tarefas completadas nele
-  const isDone = isMarked || completedTasks.length > 0;
-
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center" onClick={onClose}>
       <div 
@@ -117,10 +127,10 @@ function DayModal({ date, goalId, isMarked, completedTasks, onClose, onUpdate }:
         )}
 
         <p className="text-gray-600 mb-6 text-lg font-medium">
-          {isDone ? 'Você registrou progresso neste dia.' : 'Você fez algo que moveu este objetivo para frente?'}
+          {isMarked ? 'Você marcou este dia como concluído.' : 'Você fez algo que moveu este objetivo para frente?'}
         </p>
 
-        {!isMarked && completedTasks.length === 0 && (
+        {!isMarked && (
           <textarea
             value={note}
             onChange={e => setNote(e.target.value)}
