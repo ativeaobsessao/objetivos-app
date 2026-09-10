@@ -8,8 +8,8 @@ export function cn(...inputs: ClassValue[]) {
 
 export function MobileLayout({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className="min-h-screen bg-[#f9fafb] text-gray-900 font-sans selection:bg-red-100 flex justify-center">
-      <div className={cn("w-full max-w-md bg-[#f9fafb] min-h-screen relative flex flex-col shadow-sm", className)}>
+    <div className="min-h-screen bg-[#f9fafb] dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans selection:bg-red-100 dark:selection:bg-red-900/30 flex justify-center transition-colors duration-200">
+      <div className={cn("w-full max-w-md bg-[#f9fafb] dark:bg-gray-950 min-h-screen relative flex flex-col shadow-sm transition-colors duration-200", className)}>
         {children}
       </div>
     </div>

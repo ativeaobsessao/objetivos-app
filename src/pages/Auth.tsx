@@ -48,7 +48,7 @@ export default function Auth() {
           <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-6">
             <KeyRound className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
             {isForgotPassword ? 'Recuperar Senha' : (isLogin ? 'Bem-vindo de volta' : 'Criar Conta')}
           </h1>
           <p className="text-gray-500 mt-2">
@@ -70,7 +70,7 @@ export default function Auth() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Seu email"
-                className="w-full pl-11 pr-4 py-4 bg-white border border-gray-200 rounded-2xl outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-all shadow-sm"
+                className="w-full pl-11 pr-4 py-4 bg-white dark:bg-gray-900 dark:border-gray-800 border border-gray-200 rounded-2xl outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-all shadow-sm"
               />
             </div>
           </div>
@@ -88,7 +88,7 @@ export default function Auth() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Sua senha"
                   minLength={6}
-                  className="w-full pl-11 pr-4 py-4 bg-white border border-gray-200 rounded-2xl outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-all shadow-sm"
+                  className="w-full pl-11 pr-4 py-4 bg-white dark:bg-gray-900 dark:border-gray-800 border border-gray-200 rounded-2xl outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-all shadow-sm"
                 />
               </div>
             </div>
@@ -110,7 +110,7 @@ export default function Auth() {
           {!isForgotPassword && (
             <button
               onClick={() => setIsForgotPassword(true)}
-              className="text-sm text-gray-500 hover:text-gray-900"
+              className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-100"
             >
               Esqueceu sua senha?
             </button>
@@ -127,7 +127,7 @@ export default function Auth() {
                 setIsForgotPassword(false);
                 setIsLogin(!isLogin);
               }}
-              className="font-medium text-gray-900 hover:underline"
+              className="font-medium text-gray-900 dark:text-gray-100 hover:underline"
             >
               {isForgotPassword 
                 ? 'Voltar ao login' 

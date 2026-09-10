@@ -37,7 +37,7 @@ export default function CreateObjective() {
   return (
     <MobileLayout className="p-6">
       <header className="flex items-center gap-4 py-4 mb-4">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-900 active:bg-gray-100 rounded-full transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-900 dark:text-gray-100 active:bg-gray-100 rounded-full transition-colors">
           <ArrowLeft className="w-6 h-6" />
         </button>
         <h1 className="text-xl font-semibold">Novo objetivo</h1>
@@ -58,7 +58,7 @@ export default function CreateObjective() {
             onChange={(e) => setTitle(e.target.value)}
             disabled={isSubmitting}
             placeholder="Ex: Conseguir minha primeira venda"
-            className="w-full text-lg bg-white border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-all placeholder:text-gray-300 shadow-sm disabled:opacity-50"
+            className="w-full text-lg bg-white dark:bg-gray-900 dark:border-gray-800 border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-all placeholder:text-gray-300 shadow-sm disabled:opacity-50"
             autoFocus
           />
         </div>
@@ -73,7 +73,7 @@ export default function CreateObjective() {
               setStartDate(e.target.value);
               setEndDate(addDaysLocal(e.target.value, 29));
             }}
-            className="w-full text-base bg-white border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 transition-all shadow-sm disabled:opacity-50"
+            className="w-full text-base bg-white dark:bg-gray-900 dark:border-gray-800 border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 transition-all shadow-sm disabled:opacity-50"
           />
         </div>
 
@@ -87,7 +87,7 @@ export default function CreateObjective() {
             value={endDate}
             disabled={isSubmitting}
             onChange={(e) => setEndDate(e.target.value)}
-            className="w-full text-base bg-white border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 transition-all shadow-sm disabled:opacity-50"
+            className="w-full text-base bg-white dark:bg-gray-900 dark:border-gray-800 border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 transition-all shadow-sm disabled:opacity-50"
           />
         </div>
 

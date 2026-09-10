@@ -6,6 +6,8 @@ import { Plus, ChevronRight } from 'lucide-react';
 import { UserMenu } from '../components/UserMenu';
 import { domainService } from '../services/domainService';
 
+import { ThemeToggle } from '../components/ThemeToggle';
+
 const QUOTES = [
   { text: "A vida não examinada não vale a pena ser vivida.", author: "Sócrates" },
   { text: "O que pode ser medido pode ser melhorado.", author: "Peter Drucker" },
@@ -46,7 +48,10 @@ export default function Home() {
     <MobileLayout className="p-6">
       <header className="flex justify-between items-center pt-6 pb-2">
         <h1 className="text-3xl font-bold tracking-tight">Objetivos</h1>
-        <UserMenu />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <UserMenu />
+        </div>
       </header>
 
       <div className="mb-8 mt-2">
@@ -59,7 +64,7 @@ export default function Home() {
       <main className="flex-1 flex flex-col gap-4">
         {goals.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-4 py-12">
-            <h2 className="text-xl font-medium text-gray-900 mb-2">O que você quer alcançar?</h2>
+            <h2 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">O que você quer alcançar?</h2>
             <p className="text-sm text-gray-500 mb-8">Defina seu primeiro objetivo e comece a agir.</p>
             <Link
               to="/create"
@@ -80,10 +85,10 @@ export default function Home() {
                 <Link 
                   to={`/objective/${goal.id}`} 
                   key={goal.id} 
-                  className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center active:scale-[0.98] transition-transform"
+                  className="bg-white dark:bg-gray-900 dark:border-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center active:scale-[0.98] transition-transform"
                 >
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-lg mb-1">{goal.title}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg mb-1">{goal.title}</h3>
                     <p className="text-gray-500 text-sm">
                       {goal.taskCount || 0} {goal.taskCount === 1 ? 'tarefa' : 'tarefas'}
                     </p>
@@ -95,7 +100,7 @@ export default function Home() {
             
             <Link
               to="/create"
-              className="flex items-center justify-center gap-2 bg-gray-50 text-gray-900 border border-gray-200 px-5 py-4 rounded-2xl font-medium active:bg-gray-100 transition-colors mt-4"
+              className="flex items-center justify-center gap-2 bg-gray-50 text-gray-900 dark:text-gray-100 border border-gray-200 px-5 py-4 rounded-2xl font-medium active:bg-gray-100 transition-colors mt-4"
             >
               <Plus className="w-5 h-5" />
               <span>Novo objetivo</span>

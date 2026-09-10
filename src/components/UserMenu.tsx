@@ -39,9 +39,9 @@ export function UserMenu() {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl z-50 overflow-hidden border border-gray-100">
+          <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 dark:border-gray-800 rounded-2xl shadow-xl z-50 overflow-hidden border border-gray-100">
             <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-              <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{user.email}</p>
             </div>
             
             <div className="p-2 flex flex-col gap-1">

@@ -7,7 +7,10 @@ import { ArrowLeft, MoreHorizontal } from 'lucide-react';
 import { formatLocal, parseLocal } from '../utils/dates';
 import { GoalTasks } from '../components/GoalTasks';
 import { GoalCalendar } from '../components/GoalCalendar';
+import { GoalAchievements } from '../components/GoalAchievements';
 import { UserMenu } from '../components/UserMenu';
+
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export default function ObjectiveDetail() {
   const { id } = useParams();
@@ -30,7 +33,7 @@ export default function ObjectiveDetail() {
       <MobileLayout>
         <div className="flex-1 flex flex-col items-center justify-center min-h-screen text-center px-4">
           <p>Objetivo não encontrado.</p>
-          <button onClick={() => navigate('/')} className="mt-4 text-gray-900 font-medium">Voltar</button>
+          <button onClick={() => navigate('/')} className="mt-4 text-gray-900 dark:text-gray-100 font-medium">Voltar</button>
         </div>
       </MobileLayout>
     );
@@ -39,12 +42,13 @@ export default function ObjectiveDetail() {
   return (
     <MobileLayout className="p-6">
       <header className="flex justify-between items-start py-4 mb-6">
-        <button onClick={() => navigate('/')} className="p-2 -ml-2 text-gray-900 active:bg-gray-100 rounded-full transition-colors">
+        <button onClick={() => navigate('/')} className="p-2 -ml-2 text-gray-900 dark:text-gray-100 active:bg-gray-100 rounded-full transition-colors">
           <ArrowLeft className="w-6 h-6" />
         </button>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <UserMenu />
-          <button onClick={() => setShowMenu(true)} className="p-2 -mr-2 text-gray-900 active:bg-gray-100 rounded-full transition-colors">
+          <button onClick={() => setShowMenu(true)} className="p-2 -mr-2 text-gray-900 dark:text-gray-100 dark:text-white active:bg-gray-100 dark:active:bg-gray-800 rounded-full transition-colors">
             <MoreHorizontal className="w-6 h-6" />
           </button>
         </div>
@@ -53,14 +57,14 @@ export default function ObjectiveDetail() {
       <main className="flex-1 flex flex-col">
         {/* Goal Header */}
         <div className="mb-12">
-          <h1 className="text-3xl font-bold text-gray-900 leading-tight tracking-tight mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight tracking-tight mb-6">
             {goal.title}
           </h1>
           
           <div className="flex flex-wrap items-center gap-4 text-sm">
             <div className="flex items-center gap-2 bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-100">
               <span className="font-bold tracking-widest text-gray-400 uppercase text-xs">Início</span>
-              <span className="font-medium text-gray-900">{parseLocal(goal.startDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')}</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{parseLocal(goal.startDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')}</span>
             </div>
             
             <div className="flex items-center gap-2 bg-red-50 px-4 py-2.5 rounded-xl border border-red-100">
@@ -71,6 +75,7 @@ export default function ObjectiveDetail() {
         </div>
 
         <GoalTasks goalId={goal.id} tasks={tasks} onUpdate={reload} />
+        <GoalAchievements marks={marks} />
 
         <GoalCalendar goal={goal} marks={marks} tasks={tasks} onUpdate={reload} />
 
@@ -122,11 +127,11 @@ function ObjectiveMenu({ goal, onClose, onUpdate, onDelete }: { goal: any, onClo
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div 
-        className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 pb-12 sm:pb-6 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10"
+        className="bg-white dark:bg-gray-900 dark:border-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 pb-12 sm:pb-6 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold text-gray-900">Opções</h3>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Opções</h3>
         </div>
 
         {showEditEnd ? (
@@ -151,14 +156,14 @@ function ObjectiveMenu({ goal, onClose, onUpdate, onDelete }: { goal: any, onClo
           <div className="flex flex-col gap-2">
             <button
               onClick={() => setShowEditEnd(true)}
-              className="w-full text-left px-4 py-4 rounded-2xl font-medium text-gray-900 active:bg-gray-100"
+              className="w-full text-left px-4 py-4 rounded-2xl font-medium text-gray-900 dark:text-gray-100 active:bg-gray-100"
             >
               Alterar data de término
             </button>
             {goal.status === 'active' && (
               <button
                 onClick={handleComplete}
-                className="w-full text-left px-4 py-4 rounded-2xl font-medium text-gray-900 active:bg-gray-100"
+                className="w-full text-left px-4 py-4 rounded-2xl font-medium text-gray-900 dark:text-gray-100 active:bg-gray-100"
               >
                 Marcar como concluído
               </button>

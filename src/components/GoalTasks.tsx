@@ -128,7 +128,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
                 autoFocus
                 value={editTitle}
                 onChange={e => setEditTitle(e.target.value)}
-                className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-gray-900 transition-colors text-lg shadow-sm"
+                className="flex-1 bg-white dark:bg-gray-900 dark:border-gray-800 border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-gray-900 transition-colors text-lg shadow-sm"
                 disabled={isSaving}
               />
               <button onClick={handleSaveEdit} disabled={isSaving || !editTitle.trim()} className="p-2 text-green-600 hover:bg-green-50 rounded-lg active:scale-95 transition-all disabled:opacity-50">
@@ -148,13 +148,13 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
                 className="mt-0.5 text-gray-400 active:scale-90 transition-transform"
               >
                 {task.completed ? (
-                  <CheckSquare className="w-6 h-6 text-gray-900" />
+                  <CheckSquare className="w-6 h-6 text-gray-900 dark:text-gray-100" />
                 ) : (
                   <Square className="w-6 h-6" />
                 )}
               </button>
               <span 
-                className={`text-lg flex-1 transition-colors select-none ${task.completed ? 'text-gray-400 line-through decoration-gray-300 cursor-default' : 'text-gray-900 cursor-pointer'}`}
+                className={`text-lg flex-1 transition-colors select-none ${task.completed ? 'text-gray-400 line-through decoration-gray-300 cursor-default' : 'text-gray-900 dark:text-gray-100 cursor-pointer'}`}
                 onClick={() => handleTaskClick(task)}
                 title={task.completed ? "Clique duas vezes para desmarcar" : ""}
               >
@@ -196,7 +196,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
         ) : (
           <button 
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-3 py-2 mt-2 text-gray-400 hover:text-gray-900 transition-colors text-left"
+            className="flex items-center gap-3 py-2 mt-2 text-gray-400 hover:text-gray-900 dark:text-gray-100 transition-colors text-left"
           >
             <Plus className="w-6 h-6 mt-0.5" />
             <span className="text-lg">Adicionar tarefa</span>
@@ -216,10 +216,10 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
       {taskToDelete && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center" onClick={() => setTaskToDelete(null)}>
           <div 
-            className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 pb-12 sm:pb-6 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 shadow-2xl"
+            className="bg-white dark:bg-gray-900 dark:border-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 pb-12 sm:pb-6 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 shadow-2xl"
             onClick={e => e.stopPropagation()}
           >
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Excluir tarefa</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Excluir tarefa</h3>
             <p className="text-gray-600 mb-6 font-medium text-lg">
               Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.
             </p>
@@ -232,7 +232,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
               </button>
               <button
                 onClick={() => setTaskToDelete(null)}
-                className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform bg-gray-100 text-gray-900 hover:bg-gray-200"
+                className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform bg-gray-100 text-gray-900 dark:text-gray-100 hover:bg-gray-200"
               >
                 Cancelar
               </button>
