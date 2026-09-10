@@ -11,6 +11,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
   const [editTitle, setEditTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [taskToConfirm, setTaskToConfirm] = useState<Task | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
   const handleToggle = async (task: Task) => {
     if (!task.completed) {
@@ -29,11 +30,15 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
     onUpdate();
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    if (window.confirm('Excluir esta tarefa?')) {
-      await domainService.deleteTaskFromGoal(goalId, taskId);
-      onUpdate();
-    }
+  const handleDeleteRequest = (task: Task) => {
+    setTaskToDelete(task);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!taskToDelete) return;
+    await domainService.deleteTaskFromGoal(goalId, taskToDelete.id);
+    setTaskToDelete(null);
+    onUpdate();
   };
 
   const handleAddTask = async (e: React.FormEvent) => {
@@ -93,7 +98,11 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
               key={task.id} 
               className="flex items-start gap-3 py-2 group"
             >
-              <button onClick={() => handleToggle(task)} className="mt-0.5 text-gray-400 active:scale-90 transition-transform">
+              <button 
+                onClick={() => !task.completed && handleToggle(task)} 
+                onDoubleClick={() => task.completed && handleToggle(task)}
+                className="mt-0.5 text-gray-400 active:scale-90 transition-transform"
+              >
                 {task.completed ? (
                   <CheckSquare className="w-6 h-6 text-gray-900" />
                 ) : (
@@ -101,8 +110,10 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
                 )}
               </button>
               <span 
-                className={`text-lg flex-1 cursor-pointer transition-colors ${task.completed ? 'text-gray-400 line-through decoration-gray-300' : 'text-gray-900'}`}
-                onClick={() => handleToggle(task)}
+                className={`text-lg flex-1 transition-colors select-none ${task.completed ? 'text-gray-400 line-through decoration-gray-300 cursor-default' : 'text-gray-900 cursor-pointer'}`}
+                onClick={() => !task.completed && handleToggle(task)}
+                onDoubleClick={() => task.completed && handleToggle(task)}
+                title={task.completed ? "Clique duas vezes para desmarcar" : ""}
               >
                 {task.title}
               </span>
@@ -114,7 +125,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
                 <Edit2 className="w-4 h-4" />
               </button>
               <button 
-                onClick={() => handleDeleteTask(task.id)} 
+                onClick={() => handleDeleteRequest(task)} 
                 className="p-1.5 text-gray-300 hover:text-red-500 active:bg-red-50 rounded-lg transition-colors"
                 title="Excluir"
               >
@@ -172,6 +183,34 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
                 className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform bg-gray-100 text-gray-600 hover:bg-gray-200"
               >
                 Não, apenas concluir tarefa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {taskToDelete && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center" onClick={() => setTaskToDelete(null)}>
+          <div 
+            className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 pb-12 sm:pb-6 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Excluir tarefa</h3>
+            <p className="text-gray-600 mb-6 font-medium text-lg">
+              Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleConfirmDelete}
+                className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform bg-red-500 text-white shadow-md shadow-red-500/20"
+              >
+                Sim, excluir
+              </button>
+              <button
+                onClick={() => setTaskToDelete(null)}
+                className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform bg-gray-100 text-gray-900 hover:bg-gray-200"
+              >
+                Cancelar
               </button>
             </div>
           </div>
