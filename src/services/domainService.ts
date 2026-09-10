@@ -100,7 +100,7 @@ export const domainService = {
           id: t.id,
           title: t.title,
           completed: t.completed,
-          completedDate: t.completed_date,
+          completedDate: t.completed ? (t.updated_at ? t.updated_at.split('T')[0] : undefined) : undefined,
           createdAt: t.created_at,
           updatedAt: t.updated_at
         }));
@@ -158,7 +158,6 @@ export const domainService = {
   toggleTask: async (taskId: string, completed: boolean, date?: string) => {
     const { error } = await supabase.from('tasks').update({ 
       completed, 
-      completed_date: completed ? date : null,
       updated_at: new Date().toISOString() 
     }).eq('id', taskId);
     if (error) throw error;

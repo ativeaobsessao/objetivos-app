@@ -12,22 +12,50 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
   const [isSaving, setIsSaving] = useState(false);
   const [taskToConfirm, setTaskToConfirm] = useState<Task | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [lastClickTime, setLastClickTime] = useState<Record<string, number>>({});
 
-  const handleToggle = async (task: Task) => {
+  const handleTaskClick = (task: Task) => {
     if (!task.completed) {
-      setTaskToConfirm(task);
+      handleToggle(task);
     } else {
-      await domainService.toggleTask(task.id, false, undefined);
-      onUpdate();
+      const now = Date.now();
+      const last = lastClickTime[task.id] || 0;
+      if (now - last < 500) {
+        handleToggle(task);
+        setLastClickTime(prev => ({ ...prev, [task.id]: 0 }));
+      } else {
+        setLastClickTime(prev => ({ ...prev, [task.id]: now }));
+      }
     }
   };
 
-  const handleConfirmCompletion = async (linkToToday: boolean) => {
-    if (!taskToConfirm) return;
-    const today = getTodayLocal();
-    await domainService.toggleTask(taskToConfirm.id, true, linkToToday ? today : undefined);
+  const handleToggle = async (task: Task) => {
+    if (!task.completed) {
+      const today = getTodayLocal();
+      // Optimistic update - call onUpdate early if possible, or wait?
+      // Since onUpdate fetches from DB, it's not truly optimistic unless we have a local state,
+      // but let's just show the popup immediately.
+      setTaskToConfirm(task);
+      try {
+        await domainService.toggleTask(task.id, true, today);
+        onUpdate();
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao salvar.');
+      }
+    } else {
+      try {
+        await domainService.toggleTask(task.id, false, undefined);
+        onUpdate();
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao salvar.');
+      }
+    }
+  };
+
+  const closeSuccessPopup = () => {
     setTaskToConfirm(null);
-    onUpdate();
   };
 
   const handleDeleteRequest = (task: Task) => {
@@ -99,8 +127,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
               className="flex items-start gap-3 py-2 group"
             >
               <button 
-                onClick={() => !task.completed && handleToggle(task)} 
-                onDoubleClick={() => task.completed && handleToggle(task)}
+                onClick={() => handleTaskClick(task)}
                 className="mt-0.5 text-gray-400 active:scale-90 transition-transform"
               >
                 {task.completed ? (
@@ -111,8 +138,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
               </button>
               <span 
                 className={`text-lg flex-1 transition-colors select-none ${task.completed ? 'text-gray-400 line-through decoration-gray-300 cursor-default' : 'text-gray-900 cursor-pointer'}`}
-                onClick={() => !task.completed && handleToggle(task)}
-                onDoubleClick={() => task.completed && handleToggle(task)}
+                onClick={() => handleTaskClick(task)}
                 title={task.completed ? "Clique duas vezes para desmarcar" : ""}
               >
                 {task.title}
@@ -162,29 +188,24 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
       </div>
 
       {taskToConfirm && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center" onClick={() => setTaskToConfirm(null)}>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center" onClick={closeSuccessPopup}>
           <div 
             className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 pb-12 sm:pb-6 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 shadow-2xl"
             onClick={e => e.stopPropagation()}
           >
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Tarefa concluída!</h3>
-            <p className="text-gray-600 mb-6 font-medium text-lg">
-              Deseja vincular a conclusão desta tarefa ao progresso de hoje no calendário?
-            </p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => handleConfirmCompletion(true)}
-                className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform bg-gray-900 text-white shadow-md"
-              >
-                Sim, vincular a hoje
-              </button>
-              <button
-                onClick={() => handleConfirmCompletion(false)}
-                className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform bg-gray-100 text-gray-600 hover:bg-gray-200"
-              >
-                Não, apenas concluir tarefa
-              </button>
+            <div className="flex items-center gap-3 mb-4 text-green-600">
+              <CheckSquare className="w-8 h-8" />
+              <h3 className="text-xl font-bold text-gray-900">Tarefa concluída!</h3>
             </div>
+            <p className="text-gray-600 mb-8 font-medium text-lg leading-relaxed">
+              A tarefa foi marcada como feita e salva no dia de hoje em seu calendário.
+            </p>
+            <button
+              onClick={closeSuccessPopup}
+              className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform bg-gray-900 text-white shadow-md"
+            >
+              Entendido
+            </button>
           </div>
         </div>
       )}
