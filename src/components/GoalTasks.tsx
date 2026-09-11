@@ -81,19 +81,47 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
 
   const handleConfirmDelete = async () => {
     if (!taskToDelete) return;
-    await domainService.deleteTaskFromGoal(goalId, taskToDelete.id);
+    const deletedId = taskToDelete.id;
     setTaskToDelete(null);
-    onUpdate();
+    
+    // Optimistic delete
+    setOptimisticTasks(prev => prev.filter(t => t.id !== deletedId));
+    
+    try {
+      await domainService.deleteTaskFromGoal(goalId, deletedId);
+      onUpdate(false);
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao excluir.');
+      setOptimisticTasks(tasks); // revert
+    }
   };
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
     
-    await domainService.addTaskToGoal(goalId, newTaskTitle.trim());
+    const newTitle = newTaskTitle.trim();
     setNewTaskTitle('');
     setIsAdding(false);
-    onUpdate();
+    
+    // Optimistic add
+    setOptimisticTasks(prev => [...prev, {
+      id: `temp-${Date.now()}`,
+      goalId,
+      title: newTitle,
+      completed: false,
+      createdAt: new Date().toISOString()
+    }]);
+
+    try {
+      await domainService.addTaskToGoal(goalId, newTitle);
+      onUpdate(false);
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao adicionar.');
+      setOptimisticTasks(tasks); // revert
+    }
   };
 
   const handleEditTask = (task: Task) => {
@@ -103,14 +131,23 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
 
   const handleSaveEdit = async () => {
     if (!editTitle.trim()) return;
+    
+    const idToEdit = editingId!;
+    const newTitle = editTitle.trim();
+    
+    setEditingId(null);
     setIsSaving(true);
+    
+    // Optimistic edit
+    setOptimisticTasks(prev => prev.map(t => t.id === idToEdit ? { ...t, title: newTitle } : t));
+    
     try {
-      await domainService.updateTask(editingId!, editTitle.trim());
-      setEditingId(null);
-      onUpdate();
+      await domainService.updateTask(idToEdit, newTitle);
+      onUpdate(false);
     } catch (err) {
       console.error(err);
       alert('Ocorreu um erro ao editar a tarefa.');
+      setOptimisticTasks(tasks); // revert
     } finally {
       setIsSaving(false);
     }
@@ -232,7 +269,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
               </button>
               <button
                 onClick={() => setTaskToDelete(null)}
-                className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform bg-gray-100 text-gray-900 dark:text-gray-100 hover:bg-gray-200"
+                className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform bg-gray-100 text-gray-900 dark:text-black hover:bg-gray-200"
               >
                 Cancelar
               </button>

@@ -107,7 +107,7 @@ export default function Home() {
             
             <Link
               to="/create"
-              className="flex items-center justify-center gap-2 bg-gray-50 text-gray-900 dark:text-gray-100 border border-gray-200 px-5 py-4 rounded-2xl font-medium active:bg-gray-100 transition-colors mt-4"
+              className="flex items-center justify-center gap-2 bg-gray-50 text-gray-900 dark:text-black border border-gray-200 px-5 py-4 rounded-2xl font-medium active:bg-gray-100 transition-colors mt-4"
             >
               <Plus className="w-5 h-5" />
               <span>Novo objetivo</span>

@@ -169,7 +169,7 @@ function DayModal({ date, goalId, isMarked, completedTasks, onClose, onUpdate }:
             <h4 className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-3">Tarefas concluídas hoje</h4>
             <div className="flex flex-col gap-2">
               {completedTasks.map(t => (
-                <div key={t.id} className="flex items-center gap-2 bg-gray-50 px-4 py-3 rounded-2xl">
+                <div key={t.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-4 py-3 rounded-2xl">
                   <Check className="w-5 h-5 text-gray-900 dark:text-gray-100" />
                   <span className="font-medium text-gray-900 dark:text-gray-100 line-through decoration-gray-300">{t.title}</span>
                 </div>
@@ -188,7 +188,7 @@ function DayModal({ date, goalId, isMarked, completedTasks, onClose, onUpdate }:
             onChange={e => setNote(e.target.value)}
             disabled={isSubmitting}
             placeholder="Anotação opcional (ex: finalizei a página)"
-            className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 min-h-[120px] resize-none mb-4 text-lg"
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 min-h-[120px] resize-none mb-4 text-lg"
           />
         )}
 
@@ -196,7 +196,7 @@ function DayModal({ date, goalId, isMarked, completedTasks, onClose, onUpdate }:
           onClick={handleToggle}
           disabled={isSubmitting}
           className={`w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform disabled:opacity-50 ${
-            isMarked ? 'bg-gray-100 text-gray-900 dark:text-gray-100' : 'bg-red-500 text-white shadow-md shadow-red-500/20'
+            isMarked ? 'bg-gray-100 text-gray-900 dark:text-black' : 'bg-red-500 text-white shadow-md shadow-red-500/20'
           }`}
         >
           {isMarked ? 'Remover marcação manual' : 'Marcar dia como feito'}
