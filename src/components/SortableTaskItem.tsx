@@ -39,10 +39,10 @@ export function SortableTaskItem({
   } = useSortable({ id: task.id });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
-    zIndex: isDragging ? 10 : 1,
-    opacity: isDragging ? 0.8 : 1,
+    zIndex: isDragging ? 50 : 1,
+    opacity: isDragging ? 0.9 : 1,
   };
 
   const isEditing = editingId === task.id;
@@ -71,14 +71,14 @@ export function SortableTaskItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-start gap-3 py-2 group bg-transparent rounded-xl ${isDragging ? 'shadow-lg bg-gray-50 dark:bg-gray-800 scale-[1.02]' : ''} transition-all`}
+      className={`flex items-start gap-2 sm:gap-3 py-2 group bg-transparent rounded-xl transition-all ${isDragging ? 'shadow-xl ring-1 ring-gray-200 dark:ring-gray-800 bg-white dark:bg-gray-800 scale-[1.02] p-2 -mx-2' : ''}`}
     >
       <div
-        className="mt-0.5 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none flex items-center justify-center p-1 -ml-1 rounded-md active:bg-gray-100 dark:active:bg-gray-800"
+        className="mt-0.5 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none flex items-center justify-center p-2 sm:p-1 -ml-2 sm:-ml-1 rounded-md active:bg-gray-100 dark:active:bg-gray-800"
         {...attributes}
         {...listeners}
       >
-        <GripVertical className="w-6 h-6" />
+        <GripVertical className="w-5 h-5 sm:w-6 sm:h-6" />
       </div>
       
       <button
@@ -93,6 +93,7 @@ export function SortableTaskItem({
       </button>
       
       <span
+        draggable={false}
         className={`text-lg flex-1 transition-colors select-none ${task.completed ? 'text-gray-400 line-through decoration-gray-300 cursor-default' : 'text-gray-900 dark:text-gray-100 cursor-pointer'}`}
         onClick={() => onTaskClick(task)}
         title={task.completed ? "Clique duas vezes para desmarcar" : ""}
@@ -118,3 +119,4 @@ export function SortableTaskItem({
     </div>
   );
 }
+
