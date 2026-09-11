@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+const fs = require('fs');
+const content = `import React, { useState } from 'react';
 import { Goal, GoalMark, Task } from '../types';
 import { getDaysInRange, getTodayLocal, formatLocal, parseLocal } from '../utils/dates';
 import { X, Check, Edit2 } from 'lucide-react';
@@ -14,7 +15,7 @@ function ProgressBar({ label, current, total, percent }: { label: string, curren
         <span className="text-gray-900 dark:text-gray-100">{current} / {total} dias ({percent}%)</span>
       </div>
       <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
-        <div className="bg-red-500 h-2 rounded-full transition-all duration-500" style={{ width: `${percent}%` }}></div>
+        <div className="bg-red-500 h-2 rounded-full transition-all duration-500" style={{ width: \`\${percent}%\` }}></div>
       </div>
     </div>
   );
@@ -73,7 +74,7 @@ export function GoalCalendar({ goal, marks, tasks, onUpdate }: { goal: Goal, mar
         
         <div className="grid grid-cols-7 gap-y-2 gap-x-2">
           {emptyCells.map((_, i) => (
-            <div key={`empty-${i}`} />
+            <div key={\`empty-\${i}\`} />
           ))}
           {days.map((date) => {
             const isFuture = date > today;
@@ -86,12 +87,12 @@ export function GoalCalendar({ goal, marks, tasks, onUpdate }: { goal: Goal, mar
                 <button
                   onClick={() => handleDayClick(date)}
                   disabled={isFuture}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all relative ${
+                  className={\`w-10 h-10 rounded-full flex items-center justify-center transition-all relative \${
                     isFuture ? 'text-gray-300 cursor-default' :
                     isMarked ? 'bg-red-500 text-white shadow-sm' :
                     isToday ? 'text-red-500 font-bold' :
                     'text-gray-900 dark:text-gray-100 font-medium hover:bg-gray-100'
-                  }`}
+                  }\`}
                 >
                   {isMarked ? <X className="w-5 h-5 stroke-[3]" /> : <span className="text-[15px]">{date.split('-')[2]}</span>}
                 </button>
@@ -283,9 +284,9 @@ function DayModal({ date, goalId, existingMark, completedTasks, onClose, onUpdat
             <button
               onClick={handleToggleMark}
               disabled={isSubmitting}
-              className={`w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform disabled:opacity-50 ${
+              className={\`w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform disabled:opacity-50 \${
                 isMarked ? 'bg-gray-100 text-gray-900 dark:text-gray-100 dark:bg-gray-800' : 'bg-red-500 text-white shadow-md shadow-red-500/20'
-              }`}
+              }\`}
             >
               {isMarked ? 'Remover marcação manual' : 'Marcar dia como feito'}
             </button>
@@ -295,3 +296,5 @@ function DayModal({ date, goalId, existingMark, completedTasks, onClose, onUpdat
     </div>
   );
 }
+`;
+fs.writeFileSync('src/components/GoalCalendar.tsx', content);
