@@ -173,6 +173,11 @@ export const domainService = {
   },
 
   // Marks
+  updateGoalMarkNote: async (markId: string, note?: string) => {
+    const { error } = await supabase.from('goal_marks').update({ note: note || null }).eq('id', markId);
+    if (error) throw error;
+  },
+  
   toggleGoalMark: async (goalId: string, markDate: string, note?: string) => {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error("Usuário não autenticado");

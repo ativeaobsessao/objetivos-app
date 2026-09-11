@@ -126,7 +126,7 @@ export function GoalCalendar({ goal, marks, tasks, onUpdate }: { goal: Goal, mar
         <DayModal
           date={selectedDate}
           goalId={goal.id}
-          isMarked={marks.some(m => m.markDate === selectedDate)}
+          existingMark={marks.find(m => m.markDate === selectedDate)}
           completedTasks={tasks?.filter(t => t.completedDate === selectedDate) || []}
           onClose={() => setSelectedDate(null)}
           onUpdate={() => {
@@ -139,14 +139,29 @@ export function GoalCalendar({ goal, marks, tasks, onUpdate }: { goal: Goal, mar
   );
 }
 
-function DayModal({ date, goalId, isMarked, completedTasks, onClose, onUpdate }: { date: string, goalId: string, isMarked: boolean, completedTasks: Task[], onClose: () => void, onUpdate: () => void }) {
-  const [note, setNote] = useState('');
+function DayModal({ date, goalId, existingMark, completedTasks, onClose, onUpdate }: { date: string, goalId: string, existingMark?: { id: string, note?: string }, completedTasks: Task[], onClose: () => void, onUpdate: () => void }) {
+  const isMarked = !!existingMark;
+  const initialNote = existingMark?.note || '';
+  const [note, setNote] = useState(initialNote);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const hasNoteChanged = isMarked && note !== initialNote;
 
-  const handleToggle = async () => {
+  const handleAction = async () => {
     setIsSubmitting(true);
-    await domainService.toggleGoalMark(goalId, date, note.trim() || undefined);
-    onUpdate();
+    try {
+      if (hasNoteChanged) {
+        await domainService.updateGoalMarkNote(existingMark.id, note.trim() || undefined);
+      } else {
+        await domainService.toggleGoalMark(goalId, date, note.trim() || undefined);
+      }
+      onUpdate();
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao salvar.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const formattedDate = date.split('-').reverse().join('/');
@@ -182,25 +197,46 @@ function DayModal({ date, goalId, isMarked, completedTasks, onClose, onUpdate }:
           {isMarked ? 'Você marcou este dia como concluído.' : 'Você fez algo que moveu este objetivo para frente?'}
         </p>
 
-        {!isMarked && (
-          <textarea
-            value={note}
-            onChange={e => setNote(e.target.value)}
-            disabled={isSubmitting}
-            placeholder="Anotação opcional (ex: finalizei a página)"
-            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 min-h-[120px] resize-none mb-4 text-lg"
-          />
-        )}
-
-        <button
-          onClick={handleToggle}
+        <textarea
+          value={note}
+          onChange={e => setNote(e.target.value)}
           disabled={isSubmitting}
-          className={`w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform disabled:opacity-50 ${
-            isMarked ? 'bg-gray-100 text-gray-900 dark:text-black' : 'bg-red-500 text-white shadow-md shadow-red-500/20'
-          }`}
-        >
-          {isMarked ? 'Remover marcação manual' : 'Marcar dia como feito'}
-        </button>
+          placeholder="Anotação opcional (ex: finalizei a página)"
+          className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 min-h-[120px] resize-none mb-4 text-lg"
+        />
+
+        <div className="flex flex-col gap-3">
+          {hasNoteChanged && (
+            <button
+              onClick={handleAction}
+              disabled={isSubmitting}
+              className="w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform disabled:opacity-50 bg-green-600 text-white shadow-md shadow-green-600/20"
+            >
+              Salvar anotação
+            </button>
+          )}
+          
+          <button
+            onClick={() => {
+              if (hasNoteChanged) {
+                // If they click the toggle button while note is changed, just act as toggle (removes mark)
+                setIsSubmitting(true);
+                domainService.toggleGoalMark(goalId, date, note.trim() || undefined)
+                  .then(() => onUpdate())
+                  .catch(() => alert("Erro ao salvar."))
+                  .finally(() => setIsSubmitting(false));
+              } else {
+                handleAction();
+              }
+            }}
+            disabled={isSubmitting}
+            className={`w-full py-4 font-bold text-lg rounded-2xl active:scale-95 transition-transform disabled:opacity-50 ${
+              isMarked ? 'bg-gray-100 text-gray-900 dark:text-black' : 'bg-red-500 text-white shadow-md shadow-red-500/20'
+            }`}
+          >
+            {isMarked ? 'Remover marcação manual' : 'Marcar dia como feito'}
+          </button>
+        </div>
       </div>
     </div>
   );
