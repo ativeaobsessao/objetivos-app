@@ -193,20 +193,31 @@ function DayModal({ date, goalId, existingMark, completedTasks, onClose, onUpdat
           </div>
         )}
 
+        {isMarked && initialNote && (
+          <div className="mb-6">
+            <h4 className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-3">Anotação</h4>
+            <div className="bg-gray-50 dark:bg-gray-800 px-4 py-4 rounded-2xl">
+              <p className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap text-lg">{initialNote}</p>
+            </div>
+          </div>
+        )}
+
         <p className="text-gray-600 mb-6 text-lg font-medium">
           {isMarked ? 'Você marcou este dia como concluído.' : 'Você fez algo que moveu este objetivo para frente?'}
         </p>
 
-        <textarea
-          value={note}
-          onChange={e => setNote(e.target.value)}
-          disabled={isSubmitting}
-          placeholder="Anotação opcional (ex: finalizei a página)"
-          className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 min-h-[120px] resize-none mb-4 text-lg"
-        />
+        {!isMarked && (
+          <textarea
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            disabled={isSubmitting}
+            placeholder="Anotação opcional (ex: finalizei a página)"
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-4 outline-none focus:border-gray-900 min-h-[120px] resize-none mb-4 text-lg"
+          />
+        )}
 
         <div className="flex flex-col gap-3">
-          {hasNoteChanged && (
+          {hasNoteChanged && !isMarked && (
             <button
               onClick={handleAction}
               disabled={isSubmitting}
