@@ -74,6 +74,7 @@ export const domainService = {
       endDate: g.end_date,
       status: g.status,
       createdAt: g.created_at,
+      position: g.position,
       taskCount: g.goal_task_links?.[0]?.count || 0,
       markCount: g.marks?.[0]?.count || 0
     }));

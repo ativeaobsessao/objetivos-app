@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoals } from '../hooks/useDomain';
@@ -51,7 +52,7 @@ export default function Home() {
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 150,
+        delay: 300,
         tolerance: 5,
       },
     }),
@@ -69,58 +70,42 @@ export default function Home() {
     setActiveId(null);
   };
 
+  const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
     if (navigator.vibrate) {
       navigator.vibrate(10);
     }
+
     if (over && active.id !== over.id) {
       const oldIndex = optimisticGoals.findIndex((g) => g.id === active.id);
       const newIndex = optimisticGoals.findIndex((g) => g.id === over.id);
       
       const newGoals = arrayMove(optimisticGoals, oldIndex, newIndex);
-      setOptimisticGoals(newGoals);
-
-      // Goals are ordered descending by createdAt (newest first).
-      // So to place an item between prev and next, we need createdAt between prev and next.
-      // E.g. [Newest (10:00), Middle (09:00), Oldest (08:00)]
-      const prevGoal = newGoals[newIndex - 1];
-      const nextGoal = newGoals[newIndex + 1];
       
-      let newCreatedAt = '';
-      if (!prevGoal && nextGoal) {
-        // Moved to the very top. Add 1 hour to nextGoal.
-        const d = new Date(nextGoal.createdAt);
-        d.setHours(d.getHours() + 1);
-        newCreatedAt = d.toISOString();
-      } else if (prevGoal && !nextGoal) {
-        // Moved to the very bottom. Subtract 1 hour from prevGoal.
-        const d = new Date(prevGoal.createdAt);
-        d.setHours(d.getHours() - 1);
-        newCreatedAt = d.toISOString();
-      } else if (prevGoal && nextGoal) {
-        // Between two goals.
-        const d1 = new Date(prevGoal.createdAt).getTime();
-        const d2 = new Date(nextGoal.createdAt).getTime();
-        newCreatedAt = new Date((d1 + d2) / 2).toISOString();
-      } else {
-        return;
+      // Update position field based on array index locally
+      const updatedGoals = newGoals.map((g, idx) => ({ ...g, position: idx }));
+      setOptimisticGoals(updatedGoals);
+      
+      // Debounced batch update to Supabase
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
-
-      setOptimisticGoals(current => 
-        current.map(g => g.id === active.id ? { ...g, createdAt: newCreatedAt } : g)
-      );
-
-      try {
-        await domainService.updateGoalOrder(active.id as string, newCreatedAt);
-      } catch (err) {
-        console.error(err);
-        setOptimisticGoals(goals); // revert on error
-      }
+      
+      debounceTimerRef.current = setTimeout(async () => {
+        try {
+          const updates = updatedGoals.map(g => ({ id: g.id, position: g.position! }));
+          await domainService.updateGoalOrderBatch(updates);
+          reload();
+        } catch (err) {
+          console.error(err);
+          setOptimisticGoals(goals); // revert on error
+        }
+      }, 500);
     }
   };
-
   if (loading) {
     return (
       <MobileLayout className="p-6">
@@ -170,8 +155,8 @@ export default function Home() {
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
               <SortableContext items={optimisticGoals.map(g => g.id)} strategy={verticalListSortingStrategy}>
                 <div className="flex flex-col gap-3">
-                  {optimisticGoals.map((goal: any) => (
-                    <SortableGoalItem key={goal.id} goal={goal} />
+                  {optimisticGoals.map((goal: any, idx: number) => (
+                    <SortableGoalItem key={goal.id} goal={goal} index={idx} total={optimisticGoals.length} />
                   ))}
                 </div>
               </SortableContext>

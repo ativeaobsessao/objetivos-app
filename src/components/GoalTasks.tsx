@@ -37,7 +37,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 150,
+        delay: 300,
         tolerance: 5,
       },
     }),
@@ -55,53 +55,42 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
     setActiveId(null);
   };
 
+  const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
     if (navigator.vibrate) {
       navigator.vibrate(10);
     }
+
     if (over && active.id !== over.id) {
       const oldIndex = optimisticTasks.findIndex((t) => t.id === active.id);
       const newIndex = optimisticTasks.findIndex((t) => t.id === over.id);
       
       const newTasks = arrayMove(optimisticTasks, oldIndex, newIndex);
-      setOptimisticTasks(newTasks);
-
-      const prevTask = newTasks[newIndex - 1];
-      const nextTask = newTasks[newIndex + 1];
       
-      let newCreatedAt = '';
-      if (!prevTask && nextTask) {
-        const d = new Date(nextTask.createdAt);
-        d.setHours(d.getHours() - 1);
-        newCreatedAt = d.toISOString();
-      } else if (prevTask && !nextTask) {
-        const d = new Date(prevTask.createdAt);
-        d.setHours(d.getHours() + 1);
-        newCreatedAt = d.toISOString();
-      } else if (prevTask && nextTask) {
-        const d1 = new Date(prevTask.createdAt).getTime();
-        const d2 = new Date(nextTask.createdAt).getTime();
-        newCreatedAt = new Date((d1 + d2) / 2).toISOString();
-      } else {
-        return;
+      // Update position field based on array index locally
+      const updatedTasks = newTasks.map((t, idx) => ({ ...t, position: idx }));
+      setOptimisticTasks(updatedTasks);
+      
+      // Debounced batch update to Supabase
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
-
-      setOptimisticTasks(current => 
-        current.map(t => t.id === active.id ? { ...t, createdAt: newCreatedAt } : t)
-      );
-
-      try {
-        await domainService.updateTaskOrder(active.id as string, newCreatedAt);
-        onUpdate(false);
-      } catch (err) {
-        console.error(err);
-        setOptimisticTasks(tasks);
-      }
+      
+      debounceTimerRef.current = setTimeout(async () => {
+        try {
+          const updates = updatedTasks.map(t => ({ id: t.id, position: t.position! }));
+          await domainService.updateTaskOrderBatch(updates);
+          onUpdate(false);
+        } catch (err) {
+          console.error(err);
+          setOptimisticTasks(tasks); // revert on error
+        }
+      }, 500);
     }
   };
-
   useEffect(() => {
     if (taskToConfirm) {
       const t = setTimeout(() => {
@@ -241,10 +230,12 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
         <SortableContext items={optimisticTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
           <div className="flex flex-col gap-2">
-            {optimisticTasks.map(task => (
+            {optimisticTasks.map((task, idx) => (
               <SortableTaskItem
                 key={task.id}
                 task={task}
+                index={idx}
+                total={optimisticTasks.length}
                 editingId={editingId}
                 editTitle={editTitle}
                 isSaving={isSaving}

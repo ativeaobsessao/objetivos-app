@@ -1,35 +1,10 @@
-import React from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Task } from '../types';
-import { CheckSquare, Square, Edit2, Trash2, GripVertical, Check, X } from 'lucide-react';
+const fs = require('fs');
+let code = fs.readFileSync('src/components/SortableTaskItem.tsx', 'utf8');
 
-export interface TaskItemProps {
-  task: Task;
-  index?: number;
-  total?: number;
-  editingId?: string | null;
-  editTitle?: string;
-  isSaving?: boolean;
-  onEditChange?: (val: string) => void;
-  onSaveEdit?: () => void;
-  onCancelEdit?: () => void;
-  onTaskClick?: (task: Task) => void;
-  onEditRequest?: (task: Task) => void;
-  onDeleteRequest?: (task: Task) => void;
-  isOverlay?: boolean;
-  isDraggingPlaceholder?: boolean;
-  setNodeRef?: (node: HTMLElement | null) => void;
-  style?: React.CSSProperties;
-  attributes?: any;
-  listeners?: any;
-}
-
-export function TaskItem({
+const replacement = `export function TaskItem({
   task, editingId, editTitle, isSaving, onEditChange, onSaveEdit, onCancelEdit,
   onTaskClick, onEditRequest, onDeleteRequest, isOverlay, isDraggingPlaceholder,
-  setNodeRef, style, attributes, listeners,
-  index, total
+  setNodeRef, style, attributes, listeners
 }: TaskItemProps) {
   const isEditing = editingId === task.id;
 
@@ -86,8 +61,8 @@ export function TaskItem({
       style={style}
       {...attributes}
       {...customListeners}
-      aria-label={index !== undefined && total !== undefined ? `Item ${index + 1} de ${total}` : `Tarefa ${task.title}`}
-      className={`flex items-start gap-2 sm:gap-3 py-2 group rounded-xl transition-all ${isOverlay ? 'shadow-2xl ring-1 ring-gray-900/5 dark:ring-white/10 bg-white dark:bg-gray-800 scale-[1.03] p-2 -mx-2 z-50 cursor-grabbing' : 'bg-transparent'}`}
+      aria-label={\`Tarefa \${task.title}\`}
+      className={\`flex items-start gap-2 sm:gap-3 py-2 group rounded-xl transition-all \${isOverlay ? 'shadow-2xl ring-1 ring-gray-900/5 dark:ring-white/10 bg-white dark:bg-gray-800 scale-[1.03] p-2 -mx-2 z-50 cursor-grabbing' : 'bg-transparent'}\`}
     >
       <div
         className="drag-handle mt-0.5 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none flex items-center justify-center p-2 sm:p-1 -ml-2 sm:-ml-1 rounded-md active:bg-gray-100 dark:active:bg-gray-800 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hidden md:flex"
@@ -109,7 +84,7 @@ export function TaskItem({
       
       <span
         draggable={false}
-        className={`text-lg flex-1 transition-colors select-none ${task.completed ? 'text-gray-400 line-through decoration-gray-300 cursor-default' : 'text-gray-900 dark:text-gray-100 cursor-pointer'}`}
+        className={\`text-lg flex-1 transition-colors select-none \${task.completed ? 'text-gray-400 line-through decoration-gray-300 cursor-default' : 'text-gray-900 dark:text-gray-100 cursor-pointer'}\`}
         onClick={() => onTaskClick?.(task)}
         title={task.completed ? "Clique duas vezes para desmarcar" : ""}
       >
@@ -118,7 +93,7 @@ export function TaskItem({
       
       <button
         onClick={() => onEditRequest?.(task)}
-        className={`p-1.5 text-gray-300 hover:text-gray-600 active:bg-gray-100 rounded-lg transition-colors ${isOverlay ? 'opacity-0' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'}`}
+        className={\`p-1.5 text-gray-300 hover:text-gray-600 active:bg-gray-100 rounded-lg transition-colors \${isOverlay ? 'opacity-0' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'}\`}
         title="Editar"
       >
         <Edit2 className="w-4 h-4" />
@@ -126,38 +101,17 @@ export function TaskItem({
       
       <button
         onClick={() => onDeleteRequest?.(task)}
-        className={`p-1.5 text-gray-300 hover:text-red-500 active:bg-red-50 rounded-lg transition-colors ${isOverlay ? 'opacity-0' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'}`}
+        className={\`p-1.5 text-gray-300 hover:text-red-500 active:bg-red-50 rounded-lg transition-colors \${isOverlay ? 'opacity-0' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'}\`}
         title="Excluir"
       >
         <Trash2 className="w-4 h-4" />
       </button>
     </div>
   );
-}
+}`;
 
-export function SortableTaskItem(props: Omit<TaskItemProps, 'isOverlay' | 'isDraggingPlaceholder' | 'setNodeRef' | 'style' | 'attributes' | 'listeners'>) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: props.task.id });
+const startIdx = code.indexOf('export function TaskItem');
+const endIdx = code.indexOf('export function SortableTaskItem');
+code = code.substring(0, startIdx) + replacement + '\n\n' + code.substring(endIdx);
 
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-  };
-
-  return (
-    <TaskItem
-      {...props}
-      setNodeRef={setNodeRef}
-      style={style}
-      attributes={attributes}
-      listeners={listeners}
-      isDraggingPlaceholder={isDragging}
-    />
-  );
-}
+fs.writeFileSync('src/components/SortableTaskItem.tsx', code);

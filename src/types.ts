@@ -7,6 +7,7 @@ export interface Goal {
   endDate: string; // YYYY-MM-DD
   status: GoalStatus;
   createdAt: string; // ISO 8601
+  position?: number;
 }
 
 export interface Task {
@@ -16,6 +17,7 @@ export interface Task {
   completedDate?: string; // YYYY-MM-DD
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
+  position?: number;
 }
 
 export interface GoalTaskLink {

@@ -1,25 +1,8 @@
-import React from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Link } from 'react-router-dom';
-import { ChevronRight, GripVertical } from 'lucide-react';
-import { getDiffDaysLocal } from '../utils/dates';
+const fs = require('fs');
+let code = fs.readFileSync('src/components/SortableGoalItem.tsx', 'utf8');
 
-export interface GoalItemProps {
-  goal: any;
-  index?: number;
-  total?: number;
-  isOverlay?: boolean;
-  isDraggingPlaceholder?: boolean;
-  setNodeRef?: (node: HTMLElement | null) => void;
-  style?: React.CSSProperties;
-  attributes?: any;
-  listeners?: any;
-}
-
-export function GoalItem({
-  goal, isOverlay, isDraggingPlaceholder, setNodeRef, style, attributes, listeners,
-  index, total
+const replacement = `export function GoalItem({
+  goal, isOverlay, isDraggingPlaceholder, setNodeRef, style, attributes, listeners
 }: GoalItemProps) {
   const totalDays = getDiffDaysLocal(goal.startDate, goal.endDate) + 1;
   const markCount = goal.markCount || 0;
@@ -62,8 +45,8 @@ export function GoalItem({
       style={style}
       {...attributes}
       {...customListeners}
-      className={`group bg-white dark:bg-gray-900 dark:border-gray-800 p-2 sm:p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center transition-all ${isOverlay ? 'shadow-2xl ring-2 ring-gray-900/10 dark:ring-white/10 scale-[1.03] z-50 cursor-grabbing' : ''}`}
-      aria-label={index !== undefined && total !== undefined ? `Item ${index + 1} de ${total}` : `Objetivo ${goal.title}`}
+      className={\`group bg-white dark:bg-gray-900 dark:border-gray-800 p-2 sm:p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center transition-all \${isOverlay ? 'shadow-2xl ring-2 ring-gray-900/10 dark:ring-white/10 scale-[1.03] z-50 cursor-grabbing' : ''}\`}
+      aria-label={\`Objetivo \${goal.title}\`}
     >
       <div
         className="drag-handle text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none p-3 sm:p-2 rounded-lg active:bg-gray-100 dark:active:bg-gray-800 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hidden md:flex"
@@ -73,7 +56,7 @@ export function GoalItem({
       </div>
       
       <Link
-        to={isOverlay ? '#' : `/objective/${goal.id}`}
+        to={isOverlay ? '#' : \`/objective/\${goal.id}\`}
         draggable={false}
         onClick={(e) => { if (isOverlay) e.preventDefault(); }}
         className="flex-1 flex justify-between items-center ml-1 sm:ml-0 md:ml-2 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-[0.98] transition-all select-none"
@@ -88,31 +71,10 @@ export function GoalItem({
       </Link>
     </div>
   );
-}
+}`;
 
-export function SortableGoalItem(props: Omit<GoalItemProps, 'isOverlay' | 'isDraggingPlaceholder' | 'setNodeRef' | 'style' | 'attributes' | 'listeners'>) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: props.goal.id });
+const startIdx = code.indexOf('export function GoalItem');
+const endIdx = code.indexOf('export function SortableGoalItem');
+code = code.substring(0, startIdx) + replacement + '\n\n' + code.substring(endIdx);
 
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-  };
-
-  return (
-    <GoalItem
-      {...props}
-      setNodeRef={setNodeRef}
-      style={style}
-      attributes={attributes}
-      listeners={listeners}
-      isDraggingPlaceholder={isDragging}
-    />
-  );
-}
+fs.writeFileSync('src/components/SortableGoalItem.tsx', code);
