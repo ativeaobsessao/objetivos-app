@@ -3,9 +3,9 @@ import { Task } from '../types';
 import { domainService } from '../services/domainService';
 import { CheckSquare, Square, Plus, Edit2, Check, X, Trash2 } from 'lucide-react';
 import { getTodayLocal } from '../utils/dates';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
-import { SortableTaskItem } from './SortableTaskItem';
+import { SortableTaskItem, TaskItem } from './SortableTaskItem';
 
 export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: Task[], onUpdate: (showLoading?: boolean) => void }) {
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -23,6 +23,8 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
   // Optimistic local state for immediate visual feedback
   const [optimisticTasks, setOptimisticTasks] = useState<Task[]>(tasks);
 
+  const [activeId, setActiveId] = useState<string | null>(null);
+
   useEffect(() => {
     setOptimisticTasks(tasks);
   }, [tasks]);
@@ -35,15 +37,30 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 250,
+        delay: 150,
         tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor)
   );
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
     if (over && active.id !== over.id) {
       const oldIndex = optimisticTasks.findIndex((t) => t.id === active.id);
       const newIndex = optimisticTasks.findIndex((t) => t.id === over.id);
@@ -221,7 +238,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
     <section className="mb-10">
       <h2 className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-4">Tarefas</h2>
       
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
         <SortableContext items={optimisticTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
           <div className="flex flex-col gap-2">
             {optimisticTasks.map(task => (
@@ -266,6 +283,9 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
             )}
           </div>
         </SortableContext>
+        <DragOverlay>
+          {activeId ? <TaskItem task={optimisticTasks.find(t => t.id === activeId)!} isOverlay /> : null}
+        </DragOverlay>
       </DndContext>
 
       {taskToConfirm && (

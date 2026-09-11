@@ -6,9 +6,9 @@ import { Plus } from 'lucide-react';
 import { UserMenu } from '../components/UserMenu';
 import { domainService } from '../services/domainService';
 import { ThemeToggle } from '../components/ThemeToggle';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
-import { SortableGoalItem } from '../components/SortableGoalItem';
+import { SortableGoalItem, GoalItem } from '../components/SortableGoalItem';
 
 const QUOTES = [
   { text: "A vida não examinada não vale a pena ser vivida.", author: "Sócrates" },
@@ -26,6 +26,8 @@ export default function Home() {
   const navigate = useNavigate();
   const [quote, setQuote] = useState(QUOTES[0]);
   const [optimisticGoals, setOptimisticGoals] = useState<any[]>([]);
+
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
     setOptimisticGoals(goals);
@@ -49,15 +51,30 @@ export default function Home() {
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 250,
+        delay: 150,
         tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor)
   );
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
     if (over && active.id !== over.id) {
       const oldIndex = optimisticGoals.findIndex((g) => g.id === active.id);
       const newIndex = optimisticGoals.findIndex((g) => g.id === over.id);
@@ -150,7 +167,7 @@ export default function Home() {
               <h2 className="text-sm font-bold tracking-widest text-gray-400 uppercase">Seus objetivos</h2>
             </div>
             
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
               <SortableContext items={optimisticGoals.map(g => g.id)} strategy={verticalListSortingStrategy}>
                 <div className="flex flex-col gap-3">
                   {optimisticGoals.map((goal: any) => (

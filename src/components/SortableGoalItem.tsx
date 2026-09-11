@@ -5,48 +5,56 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, GripVertical } from 'lucide-react';
 import { getDiffDaysLocal } from '../utils/dates';
 
-interface SortableGoalItemProps {
+export interface GoalItemProps {
   goal: any;
+  isOverlay?: boolean;
+  isDraggingPlaceholder?: boolean;
+  setNodeRef?: (node: HTMLElement | null) => void;
+  style?: React.CSSProperties;
+  attributes?: any;
+  listeners?: any;
 }
 
-export function SortableGoalItem({ goal }: SortableGoalItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: goal.id });
-
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-    zIndex: isDragging ? 50 : 1,
-    opacity: isDragging ? 0.9 : 1,
-  };
-
+export function GoalItem({
+  goal, isOverlay, isDraggingPlaceholder, setNodeRef, style, attributes, listeners
+}: GoalItemProps) {
   const totalDays = getDiffDaysLocal(goal.startDate, goal.endDate) + 1;
   const markCount = goal.markCount || 0;
   const progressPercent = totalDays > 0 ? Math.round((markCount / totalDays) * 100) : 0;
   const daysLeft = Math.max(0, totalDays - markCount);
 
+  if (isDraggingPlaceholder) {
+    return (
+      <div ref={setNodeRef} style={style} className="bg-gray-50/50 dark:bg-gray-800/30 p-2 sm:p-3 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 flex items-center opacity-40">
+        <div className="p-3 sm:p-2 text-transparent flex items-center justify-center">
+          <GripVertical className="w-6 h-6" />
+        </div>
+        <div className="flex-1 ml-1 sm:ml-2 p-2">
+          <h3 className="text-lg mb-1 text-transparent">{goal.title}</h3>
+          <p className="text-sm text-transparent">progress</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white dark:bg-gray-900 dark:border-gray-800 p-2 sm:p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center transition-all ${isDragging ? 'shadow-2xl ring-2 ring-gray-900/10 dark:ring-white/10 scale-[1.02]' : ''}`}
+      className={`bg-white dark:bg-gray-900 dark:border-gray-800 p-2 sm:p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center transition-all ${isOverlay ? 'shadow-2xl ring-2 ring-gray-900/10 dark:ring-white/10 scale-105 z-50 cursor-grabbing' : ''}`}
     >
       <div
         className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none p-3 sm:p-2 rounded-lg active:bg-gray-100 dark:active:bg-gray-800 flex items-center justify-center"
+        style={{ touchAction: 'none' }}
         {...attributes}
         {...listeners}
       >
         <GripVertical className="w-6 h-6" />
       </div>
       <Link
-        to={`/objective/${goal.id}`}
+        to={isOverlay ? '#' : `/objective/${goal.id}`}
         draggable={false}
+        onClick={(e) => { if (isOverlay) e.preventDefault(); }}
         className="flex-1 flex justify-between items-center ml-1 sm:ml-2 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-[0.98] transition-all select-none"
       >
         <div>
@@ -61,3 +69,29 @@ export function SortableGoalItem({ goal }: SortableGoalItemProps) {
   );
 }
 
+export function SortableGoalItem(props: Omit<GoalItemProps, 'isOverlay' | 'isDraggingPlaceholder' | 'setNodeRef' | 'style' | 'attributes' | 'listeners'>) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.goal.id });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+  };
+
+  return (
+    <GoalItem
+      {...props}
+      setNodeRef={setNodeRef}
+      style={style}
+      attributes={attributes}
+      listeners={listeners}
+      isDraggingPlaceholder={isDragging}
+    />
+  );
+}
