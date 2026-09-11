@@ -3,15 +3,21 @@ import { Task } from '../types';
 import { domainService } from '../services/domainService';
 import { CheckSquare, Square, Plus, Edit2, Check, X, Trash2 } from 'lucide-react';
 import { getTodayLocal } from '../utils/dates';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { SortableTaskItem } from './SortableTaskItem';
 
 export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: Task[], onUpdate: (showLoading?: boolean) => void }) {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  
   const [taskToConfirm, setTaskToConfirm] = useState<Task | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  
   const [lastClickTime, setLastClickTime] = useState<Record<string, number>>({});
   
   // Optimistic local state for immediate visual feedback
@@ -20,6 +26,58 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
   useEffect(() => {
     setOptimisticTasks(tasks);
   }, [tasks]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = optimisticTasks.findIndex((t) => t.id === active.id);
+      const newIndex = optimisticTasks.findIndex((t) => t.id === over.id);
+      
+      const newTasks = arrayMove(optimisticTasks, oldIndex, newIndex);
+      setOptimisticTasks(newTasks);
+
+      const prevTask = newTasks[newIndex - 1];
+      const nextTask = newTasks[newIndex + 1];
+      
+      let newCreatedAt = '';
+      if (!prevTask && nextTask) {
+        const d = new Date(nextTask.createdAt);
+        d.setHours(d.getHours() - 1);
+        newCreatedAt = d.toISOString();
+      } else if (prevTask && !nextTask) {
+        const d = new Date(prevTask.createdAt);
+        d.setHours(d.getHours() + 1);
+        newCreatedAt = d.toISOString();
+      } else if (prevTask && nextTask) {
+        const d1 = new Date(prevTask.createdAt).getTime();
+        const d2 = new Date(nextTask.createdAt).getTime();
+        newCreatedAt = new Date((d1 + d2) / 2).toISOString();
+      } else {
+        return;
+      }
+
+      setOptimisticTasks(current => 
+        current.map(t => t.id === active.id ? { ...t, createdAt: newCreatedAt } : t)
+      );
+
+      try {
+        await domainService.updateTaskOrder(active.id as string, newCreatedAt);
+        onUpdate(false);
+      } catch (err) {
+        console.error(err);
+        setOptimisticTasks(tasks);
+      }
+    }
+  };
 
   useEffect(() => {
     if (taskToConfirm) {
@@ -157,89 +215,52 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
     <section className="mb-10">
       <h2 className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-4">Tarefas</h2>
       
-      <div className="flex flex-col gap-2">
-        {optimisticTasks.map(task => (
-          editingId === task.id ? (
-            <div key={task.id} className="flex items-center gap-2 py-2">
-              <input
-                autoFocus
-                value={editTitle}
-                onChange={e => setEditTitle(e.target.value)}
-                className="flex-1 bg-white dark:bg-gray-900 dark:border-gray-800 border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-gray-900 transition-colors text-lg shadow-sm"
-                disabled={isSaving}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={optimisticTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+          <div className="flex flex-col gap-2">
+            {optimisticTasks.map(task => (
+              <SortableTaskItem
+                key={task.id}
+                task={task}
+                editingId={editingId}
+                editTitle={editTitle}
+                isSaving={isSaving}
+                onEditChange={setEditTitle}
+                onSaveEdit={handleSaveEdit}
+                onCancelEdit={() => setEditingId(null)}
+                onTaskClick={handleTaskClick}
+                onEditRequest={handleEditTask}
+                onDeleteRequest={handleDeleteRequest}
               />
-              <button onClick={handleSaveEdit} disabled={isSaving || !editTitle.trim()} className="p-2 text-green-600 hover:bg-green-50 rounded-lg active:scale-95 transition-all disabled:opacity-50">
-                <Check className="w-5 h-5" />
-              </button>
-              <button onClick={() => setEditingId(null)} disabled={isSaving} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg active:scale-95 transition-all">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          ) : (
-            <div 
-              key={task.id} 
-              className="flex items-start gap-3 py-2 group"
-            >
+            ))}
+            
+            {isAdding ? (
+              <form onSubmit={handleAddTask} className="flex items-center gap-3 mt-2">
+                <Square className="w-6 h-6 text-gray-300 mt-0.5 shrink-0" />
+                <input
+                  type="text"
+                  value={newTaskTitle}
+                  onChange={e => setNewTaskTitle(e.target.value)}
+                  placeholder="Descreva a tarefa..."
+                  autoFocus
+                  className="flex-1 bg-transparent border-b border-gray-200 outline-none py-1 text-lg"
+                  onBlur={() => {
+                    if (!newTaskTitle.trim()) setIsAdding(false);
+                  }}
+                />
+              </form>
+            ) : (
               <button 
-                onClick={() => handleTaskClick(task)}
-                className="mt-0.5 text-gray-400 active:scale-90 transition-transform"
+                onClick={() => setIsAdding(true)}
+                className="flex items-center gap-3 py-2 mt-2 text-gray-400 hover:text-gray-900 dark:text-gray-100 transition-colors text-left"
               >
-                {task.completed ? (
-                  <CheckSquare className="w-6 h-6 text-gray-900 dark:text-gray-100" />
-                ) : (
-                  <Square className="w-6 h-6" />
-                )}
+                <Plus className="w-6 h-6 mt-0.5" />
+                <span className="text-lg">Adicionar tarefa</span>
               </button>
-              <span 
-                className={`text-lg flex-1 transition-colors select-none ${task.completed ? 'text-gray-400 line-through decoration-gray-300 cursor-default' : 'text-gray-900 dark:text-gray-100 cursor-pointer'}`}
-                onClick={() => handleTaskClick(task)}
-                title={task.completed ? "Clique duas vezes para desmarcar" : ""}
-              >
-                {task.title}
-              </span>
-              <button 
-                onClick={() => handleEditTask(task)} 
-                className="p-1.5 text-gray-300 hover:text-gray-600 active:bg-gray-100 rounded-lg transition-colors"
-                title="Editar"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={() => handleDeleteRequest(task)} 
-                className="p-1.5 text-gray-300 hover:text-red-500 active:bg-red-50 rounded-lg transition-colors"
-                title="Excluir"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          )
-        ))}
-
-        {isAdding ? (
-          <form onSubmit={handleAddTask} className="flex items-center gap-3 mt-2">
-            <Square className="w-6 h-6 text-gray-300 mt-0.5 shrink-0" />
-            <input
-              type="text"
-              value={newTaskTitle}
-              onChange={e => setNewTaskTitle(e.target.value)}
-              placeholder="Descreva a tarefa..."
-              autoFocus
-              className="flex-1 bg-transparent border-b border-gray-200 outline-none py-1 text-lg"
-              onBlur={() => {
-                if (!newTaskTitle.trim()) setIsAdding(false);
-              }}
-            />
-          </form>
-        ) : (
-          <button 
-            onClick={() => setIsAdding(true)}
-            className="flex items-center gap-3 py-2 mt-2 text-gray-400 hover:text-gray-900 dark:text-gray-100 transition-colors text-left"
-          >
-            <Plus className="w-6 h-6 mt-0.5" />
-            <span className="text-lg">Adicionar tarefa</span>
-          </button>
-        )}
-      </div>
+            )}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       {taskToConfirm && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">

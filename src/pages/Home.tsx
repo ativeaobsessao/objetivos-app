@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoals } from '../hooks/useDomain';
 import { MobileLayout } from '../components/MobileLayout';
-import { Plus, ChevronRight } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { UserMenu } from '../components/UserMenu';
 import { domainService } from '../services/domainService';
-import { getDiffDaysLocal, getTodayLocal } from '../utils/dates';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { SortableGoalItem } from '../components/SortableGoalItem';
 
 const QUOTES = [
   { text: "A vida não examinada não vale a pena ser vivida.", author: "Sócrates" },
@@ -23,6 +25,11 @@ export default function Home() {
   const { goals, loading, reload } = useGoals();
   const navigate = useNavigate();
   const [quote, setQuote] = useState(QUOTES[0]);
+  const [optimisticGoals, setOptimisticGoals] = useState<any[]>([]);
+
+  useEffect(() => {
+    setOptimisticGoals(goals);
+  }, [goals]);
 
   useEffect(() => {
     // Pick a random quote
@@ -33,6 +40,63 @@ export default function Home() {
       reload();
     });
   }, [reload]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = optimisticGoals.findIndex((g) => g.id === active.id);
+      const newIndex = optimisticGoals.findIndex((g) => g.id === over.id);
+      
+      const newGoals = arrayMove(optimisticGoals, oldIndex, newIndex);
+      setOptimisticGoals(newGoals);
+
+      // Goals are ordered descending by createdAt (newest first).
+      // So to place an item between prev and next, we need createdAt between prev and next.
+      // E.g. [Newest (10:00), Middle (09:00), Oldest (08:00)]
+      const prevGoal = newGoals[newIndex - 1];
+      const nextGoal = newGoals[newIndex + 1];
+      
+      let newCreatedAt = '';
+      if (!prevGoal && nextGoal) {
+        // Moved to the very top. Add 1 hour to nextGoal.
+        const d = new Date(nextGoal.createdAt);
+        d.setHours(d.getHours() + 1);
+        newCreatedAt = d.toISOString();
+      } else if (prevGoal && !nextGoal) {
+        // Moved to the very bottom. Subtract 1 hour from prevGoal.
+        const d = new Date(prevGoal.createdAt);
+        d.setHours(d.getHours() - 1);
+        newCreatedAt = d.toISOString();
+      } else if (prevGoal && nextGoal) {
+        // Between two goals.
+        const d1 = new Date(prevGoal.createdAt).getTime();
+        const d2 = new Date(nextGoal.createdAt).getTime();
+        newCreatedAt = new Date((d1 + d2) / 2).toISOString();
+      } else {
+        return;
+      }
+
+      setOptimisticGoals(current => 
+        current.map(g => g.id === active.id ? { ...g, createdAt: newCreatedAt } : g)
+      );
+
+      try {
+        await domainService.updateGoalOrder(active.id as string, newCreatedAt);
+      } catch (err) {
+        console.error(err);
+        setOptimisticGoals(goals); // revert on error
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -80,30 +144,15 @@ export default function Home() {
               <h2 className="text-sm font-bold tracking-widest text-gray-400 uppercase">Seus objetivos</h2>
             </div>
             
-            <div className="flex flex-col gap-3">
-              {goals.map((goal: any) => {
-                const totalDays = getDiffDaysLocal(goal.startDate, goal.endDate) + 1;
-                const markCount = goal.markCount || 0;
-                const progressPercent = totalDays > 0 ? Math.round((markCount / totalDays) * 100) : 0;
-                const daysLeft = Math.max(0, totalDays - markCount);
-                
-                return (
-                  <Link 
-                    to={`/objective/${goal.id}`} 
-                    key={goal.id} 
-                    className="bg-white dark:bg-gray-900 dark:border-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center active:scale-[0.98] transition-transform"
-                  >
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg mb-1">{goal.title}</h3>
-                      <p className="text-gray-500 text-sm font-medium">
-                        {progressPercent}% concluído • Faltam {daysLeft} {daysLeft === 1 ? 'dia' : 'dias'}
-                      </p>
-                    </div>
-                    <ChevronRight className="text-gray-300 w-5 h-5" />
-                  </Link>
-                );
-              })}
-            </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={optimisticGoals.map(g => g.id)} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-3">
+                  {optimisticGoals.map((goal: any) => (
+                    <SortableGoalItem key={goal.id} goal={goal} />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
             
             <Link
               to="/create"

@@ -53,6 +53,16 @@ export const domainService = {
     if (error) throw error;
   },
 
+  updateTaskOrder: async (taskId: string, newCreatedAt: string) => {
+    const { error } = await supabase.from('tasks').update({ created_at: newCreatedAt }).eq('id', taskId);
+    if (error) throw error;
+  },
+  
+  updateGoalOrder: async (goalId: string, newCreatedAt: string) => {
+    const { error } = await supabase.from('goals').update({ created_at: newCreatedAt }).eq('id', goalId);
+    if (error) throw error;
+  },
+
   getAllGoals: async (): Promise<(Goal & { taskCount: number, markCount: number })[]> => {
     const { data, error } = await supabase.from('goals').select('*, goal_task_links(count), marks:goal_marks(count)').order('created_at', { ascending: false });
     if (error) throw error;
