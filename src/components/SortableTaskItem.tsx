@@ -71,15 +71,15 @@ export function SortableTaskItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-start gap-3 py-2 group bg-transparent rounded-xl ${isDragging ? 'shadow-lg bg-gray-50 dark:bg-gray-800' : ''}`}
+      className={`flex items-start gap-3 py-2 group bg-transparent rounded-xl ${isDragging ? 'shadow-lg bg-gray-50 dark:bg-gray-800 scale-[1.02]' : ''} transition-all`}
     >
-      <button
-        className="mt-0.5 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none"
+      <div
+        className="mt-0.5 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none flex items-center justify-center p-1 -ml-1 rounded-md active:bg-gray-100 dark:active:bg-gray-800"
         {...attributes}
         {...listeners}
       >
         <GripVertical className="w-6 h-6" />
-      </button>
+      </div>
       
       <button
         onClick={() => onTaskClick(task)}

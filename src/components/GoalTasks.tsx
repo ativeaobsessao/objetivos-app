@@ -3,7 +3,7 @@ import { Task } from '../types';
 import { domainService } from '../services/domainService';
 import { CheckSquare, Square, Plus, Edit2, Check, X, Trash2 } from 'lucide-react';
 import { getTodayLocal } from '../utils/dates';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { SortableTaskItem } from './SortableTaskItem';
 
@@ -31,6 +31,12 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor)

@@ -6,7 +6,7 @@ import { Plus } from 'lucide-react';
 import { UserMenu } from '../components/UserMenu';
 import { domainService } from '../services/domainService';
 import { ThemeToggle } from '../components/ThemeToggle';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { SortableGoalItem } from '../components/SortableGoalItem';
 
@@ -45,6 +45,12 @@ export default function Home() {
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor)

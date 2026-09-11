@@ -35,15 +35,15 @@ export function SortableGoalItem({ goal }: SortableGoalItemProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white dark:bg-gray-900 dark:border-gray-800 p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center transition-transform ${isDragging ? 'shadow-lg bg-gray-50 dark:bg-gray-800' : ''}`}
+      className={`bg-white dark:bg-gray-900 dark:border-gray-800 p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center transition-all ${isDragging ? 'shadow-lg bg-gray-50 dark:bg-gray-800 scale-[1.02]' : ''}`}
     >
-      <button
-        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none p-2"
+      <div
+        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none p-2 rounded-lg active:bg-gray-100 dark:active:bg-gray-800"
         {...attributes}
         {...listeners}
       >
         <GripVertical className="w-6 h-6" />
-      </button>
+      </div>
       <Link
         to={`/objective/${goal.id}`}
         className="flex-1 flex justify-between items-center ml-2 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-[0.98] transition-all"
