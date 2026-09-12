@@ -3,9 +3,10 @@ import { Task } from '../types';
 import { domainService } from '../services/domainService';
 import { CheckSquare, Square, Plus, Edit2, Check, X, Trash2 } from 'lucide-react';
 import { getTodayLocal } from '../utils/dates';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { SortableTaskItem, TaskItem } from './SortableTaskItem';
+import { useDebouncedBatchUpdate } from '../hooks/useDebouncedBatchUpdate';
 
 export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: Task[], onUpdate: (showLoading?: boolean) => void }) {
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -32,17 +33,16 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 300,
+        delay: 250,
         tolerance: 5,
       },
     }),
-    useSensor(KeyboardSensor)
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
   );
+
+  const debouncedBatchUpdate = useDebouncedBatchUpdate(500);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -55,7 +55,6 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
     setActiveId(null);
   };
 
-  const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -74,21 +73,18 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
       const updatedTasks = newTasks.map((t: any, idx) => ({ ...t, position: idx }));
       setOptimisticTasks(updatedTasks);
       
-      // Debounced batch update to Supabase
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      
-      debounceTimerRef.current = setTimeout(async () => {
-        try {
+      // Utilizando o hook utilitário para atualização em lote
+      debouncedBatchUpdate(
+        async () => {
           const updates = updatedTasks.map(t => ({ id: t.id, position: t.position! }));
           await domainService.updateTaskOrderBatch(updates);
-          onUpdate(false);
-        } catch (err) {
+        },
+        () => onUpdate(false),
+        (err) => {
           console.error(err);
           setOptimisticTasks(tasks); // revert on error
         }
-      }, 500);
+      );
     }
   };
   useEffect(() => {

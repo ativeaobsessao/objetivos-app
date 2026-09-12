@@ -7,9 +7,10 @@ import { Plus } from 'lucide-react';
 import { UserMenu } from '../components/UserMenu';
 import { domainService } from '../services/domainService';
 import { ThemeToggle } from '../components/ThemeToggle';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { SortableGoalItem, GoalItem } from '../components/SortableGoalItem';
+import { useDebouncedBatchUpdate } from '../hooks/useDebouncedBatchUpdate';
 
 const QUOTES = [
   { text: "A vida não examinada não vale a pena ser vivida.", author: "Sócrates" },
@@ -47,17 +48,16 @@ export default function Home() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 300,
+        delay: 250,
         tolerance: 5,
       },
     }),
-    useSensor(KeyboardSensor)
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
   );
+
+  const debouncedBatchUpdate = useDebouncedBatchUpdate(500);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -70,7 +70,6 @@ export default function Home() {
     setActiveId(null);
   };
 
-  const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -89,21 +88,18 @@ export default function Home() {
       const updatedGoals = newGoals.map((g: any, idx) => ({ ...g, position: idx }));
       setOptimisticGoals(updatedGoals);
       
-      // Debounced batch update to Supabase
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      
-      debounceTimerRef.current = setTimeout(async () => {
-        try {
+      // Utilizando o hook utilitário para atualização em lote
+      debouncedBatchUpdate(
+        async () => {
           const updates = updatedGoals.map(g => ({ id: g.id, position: g.position! }));
           await domainService.updateGoalOrderBatch(updates);
-          reload();
-        } catch (err) {
+        },
+        () => reload(),
+        (err) => {
           console.error(err);
           setOptimisticGoals(goals); // revert on error
         }
-      }, 500);
+      );
     }
   };
   if (loading) {
