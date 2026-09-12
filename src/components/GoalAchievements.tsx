@@ -4,7 +4,7 @@ import { parseLocal, getTodayLocal } from '../utils/dates';
 import { Flame, Zap, Star, Trophy, Flag } from 'lucide-react';
 
 export function GoalAchievements({ marks, goalEndDate }: { marks: GoalMark[], goalEndDate: string }) {
-  const dates = [...new Set(marks.map(m => m.date))].sort();
+  const dates = [...new Set(marks.map(m => m.markDate))].sort();
   
   let currentStreak = 0;
   let maxStreak = 0;

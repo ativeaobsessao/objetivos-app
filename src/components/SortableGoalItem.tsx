@@ -90,7 +90,7 @@ export function GoalItem({
   );
 }
 
-export function SortableGoalItem(props: Omit<GoalItemProps, 'isOverlay' | 'isDraggingPlaceholder' | 'setNodeRef' | 'style' | 'attributes' | 'listeners'>) {
+export function SortableGoalItem(props: Omit<GoalItemProps, 'isOverlay' | 'isDraggingPlaceholder' | 'setNodeRef' | 'style' | 'attributes' | 'listeners'> & { key?: React.Key }) {
   const {
     attributes,
     listeners,

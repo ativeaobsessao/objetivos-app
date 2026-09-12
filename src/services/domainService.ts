@@ -209,7 +209,21 @@ export const domainService = {
       if (error) throw error;
     }
   },
+
+  updateGoalOrderBatch: async (updates: { id: string, position: number }[]) => {
+    const promises = updates.map(u => 
+      supabase.from('goals').update({ position: u.position }).eq('id', u.id)
+    );
+    await Promise.all(promises);
+  },
   
+  updateTaskOrderBatch: async (updates: { id: string, position: number }[]) => {
+    const promises = updates.map(u => 
+      supabase.from('tasks').update({ position: u.position }).eq('id', u.id)
+    );
+    await Promise.all(promises);
+  },
+
   // Migration
   migrateLocalData: async () => {
     const { data: user } = await supabase.auth.getUser();

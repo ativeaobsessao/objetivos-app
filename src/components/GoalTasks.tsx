@@ -71,7 +71,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
       const newTasks = arrayMove(optimisticTasks, oldIndex, newIndex);
       
       // Update position field based on array index locally
-      const updatedTasks = newTasks.map((t, idx) => ({ ...t, position: idx }));
+      const updatedTasks = newTasks.map((t: any, idx) => ({ ...t, position: idx }));
       setOptimisticTasks(updatedTasks);
       
       // Debounced batch update to Supabase

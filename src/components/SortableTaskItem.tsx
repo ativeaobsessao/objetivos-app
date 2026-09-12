@@ -135,7 +135,7 @@ export function TaskItem({
   );
 }
 
-export function SortableTaskItem(props: Omit<TaskItemProps, 'isOverlay' | 'isDraggingPlaceholder' | 'setNodeRef' | 'style' | 'attributes' | 'listeners'>) {
+export function SortableTaskItem(props: Omit<TaskItemProps, 'isOverlay' | 'isDraggingPlaceholder' | 'setNodeRef' | 'style' | 'attributes' | 'listeners'> & { key?: React.Key }) {
   const {
     attributes,
     listeners,

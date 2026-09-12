@@ -86,7 +86,7 @@ export default function Home() {
       const newGoals = arrayMove(optimisticGoals, oldIndex, newIndex);
       
       // Update position field based on array index locally
-      const updatedGoals = newGoals.map((g, idx) => ({ ...g, position: idx }));
+      const updatedGoals = newGoals.map((g: any, idx) => ({ ...g, position: idx }));
       setOptimisticGoals(updatedGoals);
       
       // Debounced batch update to Supabase
