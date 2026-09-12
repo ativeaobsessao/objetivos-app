@@ -93,13 +93,13 @@ function SortableGoalItem({ goal, index, total }: { goal: any, index: number, to
         draggable={false}
         className="flex-1 flex justify-between items-center ml-2 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-[0.98] transition-all select-none"
       >
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-0">
           <span className="font-bold text-gray-900 dark:text-gray-100 text-lg line-clamp-2">{goal.title}</span>
-          <div className="flex items-center gap-2 mt-1">
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badgeClasses}`}>
+          <div className="flex items-center flex-nowrap gap-2 mt-1 overflow-hidden">
+            <span className={`text-[11px] sm:text-xs font-bold px-2.5 py-0.5 whitespace-nowrap rounded-full ${badgeClasses}`}>
               {badgeText}
             </span>
-            <span className="text-xs text-gray-500 font-medium">{progress}% concluído</span>
+            <span className="text-[11px] sm:text-xs text-gray-500 font-medium whitespace-nowrap truncate">{progress}% concluído</span>
           </div>
         </div>
         

@@ -68,3 +68,11 @@ export function getDaysInMonth(dateString: string): number {
   const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0);
   return nextMonth.getDate();
 }
+
+export function formatDateFull(dateString: string): string {
+  const d = parseLocal(dateString);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
