@@ -53,6 +53,25 @@ function SortableGoalItem({ goal, index, total }: { goal: any, index: number, to
   };
 
   const progress = goal.taskCount > 0 ? Math.round((goal.markCount / goal.taskCount) * 100) : 0;
+  
+  let computedStatus = 'not_started';
+  if (goal.taskCount > 0 && progress === 100) {
+    computedStatus = 'completed';
+  } else if (goal.taskCount > 0 && progress > 0) {
+    computedStatus = 'in_progress';
+  }
+
+  const badgeClasses = computedStatus === 'in_progress' 
+    ? 'bg-blue-100 text-blue-800' 
+    : computedStatus === 'completed' 
+    ? 'bg-green-100 text-green-800' 
+    : 'bg-gray-100 text-gray-800';
+
+  const badgeText = computedStatus === 'in_progress' 
+    ? 'Em andamento' 
+    : computedStatus === 'completed' 
+    ? 'Concluído' 
+    : 'Não iniciado';
 
   return (
     <div
@@ -75,19 +94,19 @@ function SortableGoalItem({ goal, index, total }: { goal: any, index: number, to
         className="flex-1 flex justify-between items-center ml-2 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-[0.98] transition-all select-none"
       >
         <div className="flex flex-col">
-          <span className="font-bold text-gray-900 dark:text-gray-100 text-lg line-clamp-1">{goal.title}</span>
+          <span className="font-bold text-gray-900 dark:text-gray-100 text-lg line-clamp-2">{goal.title}</span>
           <div className="flex items-center gap-2 mt-1">
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${goal.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : goal.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-              {goal.status === 'in_progress' ? 'Em andamento' : goal.status === 'completed' ? 'Concluído' : 'Não iniciado'}
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badgeClasses}`}>
+              {badgeText}
             </span>
             <span className="text-xs text-gray-500 font-medium">{progress}% concluído</span>
           </div>
         </div>
         
-        <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center text-gray-400">
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <div className="flex items-center text-gray-400 shrink-0">
             <CalendarIcon className="w-4 h-4 mr-1" />
-            <span className="text-xs font-bold">{goal.taskCount > 0 ? `${goal.taskCount} tarefas` : 'Sem tarefas'}</span>
+            <span className="text-xs font-bold whitespace-nowrap">{goal.taskCount > 0 ? `${goal.taskCount} tarefas` : 'Sem tarefas'}</span>
           </div>
           <ChevronRight className="w-5 h-5 text-gray-300" />
         </div>
