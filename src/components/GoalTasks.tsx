@@ -1,12 +1,129 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Task } from '../types';
 import { domainService } from '../services/domainService';
-import { CheckSquare, Square, Plus, Edit2, Check, X, Trash2 } from 'lucide-react';
+import { CheckSquare, Square, Plus, Edit2, Trash2, GripVertical, Check, X } from 'lucide-react';
 import { getTodayLocal } from '../utils/dates';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { SortableTaskItem, TaskItem } from './SortableTaskItem';
-import { useDebouncedBatchUpdate } from '../hooks/useDebouncedBatchUpdate';
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  TouchSensor, 
+  useSensor, 
+  useSensors, 
+  DragEndEvent, 
+  DragStartEvent, 
+  DragOverlay 
+} from '@dnd-kit/core';
+import { 
+  SortableContext, 
+  verticalListSortingStrategy, 
+  arrayMove, 
+  sortableKeyboardCoordinates,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+function SortableTaskItem({ key, 
+  task, 
+  editingId, 
+  editTitle, 
+  isSaving, 
+  onEditChange, 
+  onSaveEdit, 
+  onCancelEdit, 
+  onTaskClick, 
+  onEditRequest, 
+  onDeleteRequest 
+}: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.3 : 1,
+  };
+
+  const isEditing = editingId === task.id;
+
+  if (isEditing) {
+    return (
+      <div ref={setNodeRef} style={style} className="flex items-center gap-2 py-2 bg-white dark:bg-gray-900 z-10 relative">
+        <input
+          autoFocus
+          value={editTitle || ''}
+          onChange={e => onEditChange?.(e.target.value)}
+          className="flex-1 bg-white dark:bg-gray-900 dark:border-gray-800 border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-gray-900 transition-colors text-lg shadow-sm"
+          disabled={isSaving}
+        />
+        <button onClick={onSaveEdit} disabled={isSaving || !editTitle?.trim()} className="p-2 text-green-600 hover:bg-green-50 rounded-lg active:scale-95 transition-all disabled:opacity-50">
+          <Check className="w-5 h-5" />
+        </button>
+        <button onClick={onCancelEdit} disabled={isSaving} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg active:scale-95 transition-all">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-start gap-2 sm:gap-3 py-2 group rounded-xl transition-all ${isDragging ? 'shadow-2xl ring-1 ring-gray-900/5 dark:ring-white/10 bg-white dark:bg-gray-800 scale-[1.03] p-2 -mx-2 z-50' : 'bg-transparent'}`}
+    >
+      <div
+        className="drag-handle text-gray-400 cursor-grab active:cursor-grabbing touch-none flex items-center justify-center p-2 sm:p-1 -ml-2 sm:-ml-1 rounded-md"
+        {...listeners}
+        {...attributes}
+      >
+        <GripVertical className="w-5 h-5 sm:w-6 sm:h-6" />
+      </div>
+      
+      <button
+        onClick={() => onTaskClick?.(task)}
+        className="mt-0.5 text-gray-400 active:scale-90 transition-transform"
+      >
+        {task.completed ? (
+          <CheckSquare className="w-6 h-6 text-gray-900 dark:text-gray-100" />
+        ) : (
+          <Square className="w-6 h-6" />
+        )}
+      </button>
+      
+      <span
+        draggable={false}
+        className={`text-lg flex-1 transition-colors select-none ${task.completed ? 'text-gray-400 line-through decoration-gray-300 cursor-default' : 'text-gray-900 dark:text-gray-100 cursor-pointer'}`}
+        onClick={() => onTaskClick?.(task)}
+      >
+        {task.title}
+      </span>
+      
+      <button
+        onClick={() => onEditRequest?.(task)}
+        className="p-1.5 text-gray-300 hover:text-gray-600 active:bg-gray-100 rounded-lg transition-colors"
+        title="Editar"
+      >
+        <Edit2 className="w-4 h-4" />
+      </button>
+      
+      <button
+        onClick={() => onDeleteRequest?.(task)}
+        className="p-1.5 text-gray-300 hover:text-red-500 active:bg-red-50 rounded-lg transition-colors"
+        title="Excluir"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
 
 export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: Task[], onUpdate: (showLoading?: boolean) => void }) {
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -15,16 +132,15 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const [taskToConfirm, setTaskToConfirm] = useState<Task | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
-  
   const [lastClickTime, setLastClickTime] = useState<Record<string, number>>({});
-  
-  // Optimistic local state for immediate visual feedback
-  const [optimisticTasks, setOptimisticTasks] = useState<Task[]>(tasks);
 
+  const [optimisticTasks, setOptimisticTasks] = useState<Task[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setOptimisticTasks(tasks);
@@ -32,6 +148,11 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
       activationConstraint: {
         delay: 250,
         tolerance: 5,
@@ -41,8 +162,6 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-  const debouncedBatchUpdate = useDebouncedBatchUpdate(500);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -55,7 +174,6 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
     setActiveId(null);
   };
 
-
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
@@ -67,26 +185,34 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
       const oldIndex = optimisticTasks.findIndex((t) => t.id === active.id);
       const newIndex = optimisticTasks.findIndex((t) => t.id === over.id);
       
-      const newTasks = arrayMove(optimisticTasks, oldIndex, newIndex);
+      const oldIds = optimisticTasks.map(t => t.id);
+      const newTasks = arrayMove<any>(optimisticTasks, oldIndex, newIndex);
+      const newIds = newTasks.map(t => t.id);
       
-      // Update position field based on array index locally
+      console.log('--- onDragEnd: Tarefas ---');
+      console.log('IDs antes do arrayMove:', oldIds);
+      console.log('IDs depois do arrayMove:', newIds);
+
       const updatedTasks = newTasks.map((t: any, idx) => ({ ...t, position: idx }));
       setOptimisticTasks(updatedTasks);
       
-      // Utilizando o hook utilitário para atualização em lote
-      debouncedBatchUpdate(
-        async () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      
+      debounceTimerRef.current = setTimeout(async () => {
+        try {
           const updates = updatedTasks.map(t => ({ id: t.id, position: t.position! }));
           await domainService.updateTaskOrderBatch(updates);
-        },
-        () => onUpdate(false),
-        (err) => {
+          onUpdate(false);
+        } catch (err) {
           console.error(err);
-          setOptimisticTasks(tasks); // revert on error
+          setOptimisticTasks(tasks);
         }
-      );
+      }, 500);
     }
   };
+
   useEffect(() => {
     if (taskToConfirm) {
       const t = setTimeout(() => {
@@ -114,7 +240,6 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
   const handleToggle = async (task: Task) => {
     if (!task.completed) {
       const today = getTodayLocal();
-      // Optimistic update
       setOptimisticTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: true, completedDate: today } : t));
       setTaskToConfirm(task);
       
@@ -123,11 +248,9 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
         onUpdate(false);
       } catch (error) {
         console.error(error);
-        alert('Erro ao salvar.');
-        setOptimisticTasks(tasks); // revert
+        setOptimisticTasks(tasks);
       }
     } else {
-      // Optimistic update
       setOptimisticTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: false, completedDate: undefined } : t));
       
       try {
@@ -135,8 +258,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
         onUpdate(false);
       } catch (error) {
         console.error(error);
-        alert('Erro ao salvar.');
-        setOptimisticTasks(tasks); // revert
+        setOptimisticTasks(tasks);
       }
     }
   };
@@ -150,7 +272,6 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
     const deletedId = taskToDelete.id;
     setTaskToDelete(null);
     
-    // Optimistic delete
     setOptimisticTasks(prev => prev.filter(t => t.id !== deletedId));
     
     try {
@@ -158,8 +279,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
       onUpdate(false);
     } catch (err) {
       console.error(err);
-      alert('Erro ao excluir.');
-      setOptimisticTasks(tasks); // revert
+      setOptimisticTasks(tasks);
     }
   };
 
@@ -171,7 +291,6 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
     setNewTaskTitle('');
     setIsAdding(false);
     
-    // Optimistic add
     setOptimisticTasks(prev => [...prev, {
       id: `temp-${Date.now()}`,
       goalId,
@@ -185,8 +304,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
       onUpdate(false);
     } catch (error) {
       console.error(error);
-      alert('Erro ao adicionar.');
-      setOptimisticTasks(tasks); // revert
+      setOptimisticTasks(tasks);
     }
   };
 
@@ -204,7 +322,6 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
     setEditingId(null);
     setIsSaving(true);
     
-    // Optimistic edit
     setOptimisticTasks(prev => prev.map(t => t.id === idToEdit ? { ...t, title: newTitle } : t));
     
     try {
@@ -212,8 +329,7 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
       onUpdate(false);
     } catch (err) {
       console.error(err);
-      alert('Ocorreu um erro ao editar a tarefa.');
-      setOptimisticTasks(tasks); // revert
+      setOptimisticTasks(tasks);
     } finally {
       setIsSaving(false);
     }
@@ -231,7 +347,6 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
                 key={task.id}
                 task={task}
                 index={idx}
-                total={optimisticTasks.length}
                 editingId={editingId}
                 editTitle={editTitle}
                 isSaving={isSaving}
@@ -271,7 +386,17 @@ export function GoalTasks({ goalId, tasks, onUpdate }: { goalId: string, tasks: 
           </div>
         </SortableContext>
         <DragOverlay>
-          {activeId ? <TaskItem task={optimisticTasks.find(t => t.id === activeId)!} isOverlay /> : null}
+          {activeId ? (
+            <div className="flex items-start gap-2 sm:gap-3 py-2 bg-white dark:bg-gray-800 shadow-2xl ring-1 ring-gray-900/5 dark:ring-white/10 rounded-xl p-2 -mx-2 z-50 scale-[1.03]">
+              <div className="drag-handle text-gray-400 p-2 sm:p-1 -ml-2 sm:-ml-1 flex items-center justify-center">
+                <GripVertical className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <Square className="w-6 h-6 text-gray-400 mt-0.5" />
+              <span className="text-lg flex-1 text-gray-900 dark:text-gray-100">
+                {optimisticTasks.find((t: any) => t.id === activeId)?.title}
+              </span>
+            </div>
+          ) : null}
         </DragOverlay>
       </DndContext>
 

@@ -1,16 +1,31 @@
-import React from 'react';
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoals } from '../hooks/useDomain';
+import { Plus, GripVertical, Calendar as CalendarIcon, ChevronRight } from 'lucide-react';
 import { MobileLayout } from '../components/MobileLayout';
-import { Plus } from 'lucide-react';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { UserMenu } from '../components/UserMenu';
 import { domainService } from '../services/domainService';
-import { ThemeToggle } from '../components/ThemeToggle';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { SortableGoalItem, GoalItem } from '../components/SortableGoalItem';
-import { useDebouncedBatchUpdate } from '../hooks/useDebouncedBatchUpdate';
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  TouchSensor, 
+  useSensor, 
+  useSensors, 
+  DragEndEvent, 
+  DragStartEvent, 
+  DragOverlay 
+} from '@dnd-kit/core';
+import { 
+  SortableContext, 
+  verticalListSortingStrategy, 
+  arrayMove, 
+  sortableKeyboardCoordinates,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const QUOTES = [
   { text: "A vida não examinada não vale a pena ser vivida.", author: "Sócrates" },
@@ -18,28 +33,84 @@ const QUOTES = [
   { text: "Não espere por circunstâncias ideais. Elas nunca chegam.", author: "Janet Erskine Stuart" },
   { text: "A disciplina é a ponte entre metas e realizações.", author: "Jim Rohn" },
   { text: "Você é o que você faz repetidamente. A excelência não é um ato, mas um hábito.", author: "Aristóteles" },
-  { text: "Ação é a chave fundamental para todo sucesso.", author: "Pablo Picasso" },
-  { text: "Sorte é o que acontece quando a preparação encontra a oportunidade.", author: "Sêneca" },
-  { text: "A jornada de mil milhas começa com um único passo.", author: "Lao-Tsé" }
+  { text: "Ação é a chave fundamental para todo sucesso.", author: "Pablo Picasso" }
 ];
+
+function SortableGoalItem({ goal, index, total }: { goal: any, index: number, total: number } & { key?: React.Key }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: goal.id });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  const progress = goal.taskCount > 0 ? Math.round((goal.markCount / goal.taskCount) * 100) : 0;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group bg-white dark:bg-gray-900 dark:border-gray-800 p-2 sm:p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center transition-all ${isDragging ? 'shadow-2xl ring-2 ring-gray-900/10 dark:ring-white/10 scale-[1.03] z-50' : ''}`}
+      aria-label={`Objetivo ${goal.title}`}
+    >
+      <div
+        className="drag-handle text-gray-400 cursor-grab active:cursor-grabbing p-3 sm:p-2 rounded-lg flex items-center justify-center touch-none"
+        {...listeners}
+        {...attributes}
+      >
+        <GripVertical className="w-6 h-6" />
+      </div>
+      
+      <Link
+        to={`/objective/${goal.id}`}
+        draggable={false}
+        className="flex-1 flex justify-between items-center ml-2 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-[0.98] transition-all select-none"
+      >
+        <div className="flex flex-col">
+          <span className="font-bold text-gray-900 dark:text-gray-100 text-lg line-clamp-1">{goal.title}</span>
+          <div className="flex items-center gap-2 mt-1">
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${goal.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : goal.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+              {goal.status === 'in_progress' ? 'Em andamento' : goal.status === 'completed' ? 'Concluído' : 'Não iniciado'}
+            </span>
+            <span className="text-xs text-gray-500 font-medium">{progress}% concluído</span>
+          </div>
+        </div>
+        
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center text-gray-400">
+            <CalendarIcon className="w-4 h-4 mr-1" />
+            <span className="text-xs font-bold">{goal.taskCount > 0 ? `${goal.taskCount} tarefas` : 'Sem tarefas'}</span>
+          </div>
+          <ChevronRight className="w-5 h-5 text-gray-300" />
+        </div>
+      </Link>
+    </div>
+  );
+}
 
 export default function Home() {
   const { goals, loading, reload } = useGoals();
   const navigate = useNavigate();
   const [quote, setQuote] = useState(QUOTES[0]);
   const [optimisticGoals, setOptimisticGoals] = useState<any[]>([]);
-
   const [activeId, setActiveId] = useState<string | null>(null);
+  
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setOptimisticGoals(goals);
   }, [goals]);
 
   useEffect(() => {
-    // Pick a random quote
     setQuote(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
-    
-    // Run migration if needed
     domainService.migrateLocalData().then(() => {
       reload();
     });
@@ -47,6 +118,11 @@ export default function Home() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
       activationConstraint: {
         delay: 250,
         tolerance: 5,
@@ -56,8 +132,6 @@ export default function Home() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-  const debouncedBatchUpdate = useDebouncedBatchUpdate(500);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -70,10 +144,10 @@ export default function Home() {
     setActiveId(null);
   };
 
-
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
+    
     if (navigator.vibrate) {
       navigator.vibrate(10);
     }
@@ -82,26 +156,34 @@ export default function Home() {
       const oldIndex = optimisticGoals.findIndex((g) => g.id === active.id);
       const newIndex = optimisticGoals.findIndex((g) => g.id === over.id);
       
-      const newGoals = arrayMove(optimisticGoals, oldIndex, newIndex);
+      const oldIds = optimisticGoals.map(g => g.id);
+      const newGoals = arrayMove<any>(optimisticGoals, oldIndex, newIndex);
+      const newIds = newGoals.map(g => g.id);
       
-      // Update position field based on array index locally
+      console.log('--- onDragEnd: Objetivos ---');
+      console.log('IDs antes do arrayMove:', oldIds);
+      console.log('IDs depois do arrayMove:', newIds);
+      
       const updatedGoals = newGoals.map((g: any, idx) => ({ ...g, position: idx }));
       setOptimisticGoals(updatedGoals);
       
-      // Utilizando o hook utilitário para atualização em lote
-      debouncedBatchUpdate(
-        async () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      
+      debounceTimerRef.current = setTimeout(async () => {
+        try {
           const updates = updatedGoals.map(g => ({ id: g.id, position: g.position! }));
           await domainService.updateGoalOrderBatch(updates);
-        },
-        () => reload(),
-        (err) => {
+          reload();
+        } catch (err) {
           console.error(err);
-          setOptimisticGoals(goals); // revert on error
+          setOptimisticGoals(goals);
         }
-      );
+      }, 500);
     }
   };
+
   if (loading) {
     return (
       <MobileLayout className="p-6">
@@ -156,6 +238,18 @@ export default function Home() {
                   ))}
                 </div>
               </SortableContext>
+              <DragOverlay>
+                {activeId ? (
+                  <div className="bg-white dark:bg-gray-900 dark:border-gray-800 p-2 sm:p-3 rounded-2xl shadow-2xl ring-2 ring-gray-900/10 dark:ring-white/10 flex items-center scale-[1.03]">
+                    <div className="drag-handle text-gray-400 p-3 sm:p-2 flex items-center justify-center">
+                      <GripVertical className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1 flex justify-between items-center ml-2 p-2">
+                      <span className="font-bold text-gray-900 dark:text-gray-100 text-lg">{optimisticGoals.find((g: any) => g.id === activeId)?.title}</span>
+                    </div>
+                  </div>
+                ) : null}
+              </DragOverlay>
             </DndContext>
             
             <Link

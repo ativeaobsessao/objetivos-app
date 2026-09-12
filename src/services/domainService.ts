@@ -64,7 +64,7 @@ export const domainService = {
   },
 
   getAllGoals: async (): Promise<(Goal & { taskCount: number, markCount: number })[]> => {
-    const { data, error } = await supabase.from('goals').select('*, goal_task_links(count), marks:goal_marks(count)').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('goals').select('*, goal_task_links(count), marks:goal_marks(count)').order('position', { ascending: true });
     if (error) throw error;
     
     return data.map(g => ({
@@ -105,7 +105,7 @@ export const domainService = {
         .from('tasks')
         .select('*')
         .in('id', taskIds)
-        .order('created_at', { ascending: true });
+        .order('position', { ascending: true });
         
       if (!tasksError && tasksData) {
         tasks = tasksData.map(t => ({
