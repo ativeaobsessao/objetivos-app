@@ -1,4 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#ef4444"/>
-  <path d="M 128 128 L 384 384 M 384 128 L 128 384" stroke="white" stroke-width="64" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#22c55e" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#emeraldGrad)"/>
+  <path 
+    d="M 136 264 L 224 352 L 376 176" 
+    fill="none" 
+    stroke="#F4F9F9" 
+    stroke-width="56" 
+    stroke-linecap="round" 
+    stroke-linejoin="round"
+  />
 </svg>

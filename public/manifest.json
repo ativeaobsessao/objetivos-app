@@ -1,0 +1,17 @@
+{
+  "name": "Objetivos",
+  "short_name": "Objetivos",
+  "description": "Acompanhe diariamente a execução de um objetivo.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
