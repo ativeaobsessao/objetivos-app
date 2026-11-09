@@ -1,14 +1,40 @@
 import { supabase } from '../lib/supabase';
 import { Goal, Task, GoalMark } from '../types';
 
+function encodeGoalTitle(title: string, cadenceType?: 'daily' | 'weekly_peaks', weeklyPeaksTarget?: number): string {
+  if (cadenceType === 'weekly_peaks' && weeklyPeaksTarget) {
+    return `${title.trim()} [CADENCE:weekly_peaks:${weeklyPeaksTarget}]`;
+  }
+  return title.trim();
+}
+
+function decodeGoalTitle(storedTitle: string): { title: string, cadenceType: 'daily' | 'weekly_peaks', weeklyPeaksTarget?: number } {
+  const match = storedTitle.match(/\s*\[CADENCE:(weekly_peaks|daily):?(\d+)?\]$/);
+  if (match) {
+    const cleanTitle = storedTitle.replace(match[0], '').trim();
+    return {
+      title: cleanTitle,
+      cadenceType: match[1] as 'daily' | 'weekly_peaks',
+      weeklyPeaksTarget: match[2] ? parseInt(match[2], 10) : 3
+    };
+  }
+  return {
+    title: storedTitle,
+    cadenceType: 'daily',
+    weeklyPeaksTarget: undefined
+  };
+}
+
 export const domainService = {
   // Goal
-  createGoal: async (title: string, startDate: string, endDate: string): Promise<Goal> => {
+  createGoal: async (title: string, startDate: string, endDate: string, cadenceType?: 'daily' | 'weekly_peaks', weeklyPeaksTarget?: number): Promise<Goal> => {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error("Usuário não autenticado");
 
+    const finalTitle = encodeGoalTitle(title, cadenceType, weeklyPeaksTarget);
+
     const goal = {
-      title, 
+      title: finalTitle, 
       start_date: startDate, 
       end_date: endDate,
       status: 'active',
@@ -18,19 +44,30 @@ export const domainService = {
     const { data, error } = await supabase.from('goals').insert(goal).select().single();
     if (error) throw error;
     
+    const parsed = decodeGoalTitle(data.title);
+
     return {
       id: data.id,
-      title: data.title,
+      title: parsed.title,
       startDate: data.start_date,
       endDate: data.end_date,
       status: data.status,
-      createdAt: data.created_at
+      createdAt: data.created_at,
+      cadenceType: parsed.cadenceType,
+      weeklyPeaksTarget: parsed.weeklyPeaksTarget
     };
   },
   
   updateGoal: async (id: string, updates: Partial<Goal>): Promise<Goal> => {
     const dbUpdates: any = {};
-    if (updates.title) dbUpdates.title = updates.title;
+    if (updates.title || updates.cadenceType || updates.weeklyPeaksTarget) {
+      const currentTitle = updates.title || '';
+      dbUpdates.title = encodeGoalTitle(
+        currentTitle, 
+        updates.cadenceType, 
+        updates.weeklyPeaksTarget
+      );
+    }
     if (updates.startDate) dbUpdates.start_date = updates.startDate;
     if (updates.endDate) dbUpdates.end_date = updates.endDate;
     if (updates.status) dbUpdates.status = updates.status;
@@ -38,13 +75,17 @@ export const domainService = {
     const { data, error } = await supabase.from('goals').update(dbUpdates).eq('id', id).select().single();
     if (error) throw error;
     
+    const parsed = decodeGoalTitle(data.title);
+
     return {
       id: data.id,
-      title: data.title,
+      title: parsed.title,
       startDate: data.start_date,
       endDate: data.end_date,
       status: data.status,
-      createdAt: data.created_at
+      createdAt: data.created_at,
+      cadenceType: parsed.cadenceType,
+      weeklyPeaksTarget: parsed.weeklyPeaksTarget
     };
   },
 
@@ -67,30 +108,39 @@ export const domainService = {
     const { data, error } = await supabase.from('goals').select('*, goal_task_links(count), marks:goal_marks(count)').order('position', { ascending: true });
     if (error) throw error;
     
-    return data.map(g => ({
-      id: g.id,
-      title: g.title,
-      startDate: g.start_date,
-      endDate: g.end_date,
-      status: g.status,
-      createdAt: g.created_at,
-      position: g.position,
-      taskCount: g.goal_task_links?.[0]?.count || 0,
-      markCount: g.marks?.[0]?.count || 0
-    }));
+    return data.map(g => {
+      const parsed = decodeGoalTitle(g.title);
+      return {
+        id: g.id,
+        title: parsed.title,
+        startDate: g.start_date,
+        endDate: g.end_date,
+        status: g.status,
+        createdAt: g.created_at,
+        position: g.position,
+        cadenceType: parsed.cadenceType,
+        weeklyPeaksTarget: parsed.weeklyPeaksTarget,
+        taskCount: g.goal_task_links?.[0]?.count || 0,
+        markCount: g.marks?.[0]?.count || 0
+      };
+    });
   },
   
   getGoalView: async (goalId: string) => {
     const { data: goalData, error: goalError } = await supabase.from('goals').select('*').eq('id', goalId).single();
     if (goalError || !goalData) return null;
     
+    const parsed = decodeGoalTitle(goalData.title);
+
     const goal: Goal = {
       id: goalData.id,
-      title: goalData.title,
+      title: parsed.title,
       startDate: goalData.start_date,
       endDate: goalData.end_date,
       status: goalData.status,
-      createdAt: goalData.created_at
+      createdAt: goalData.created_at,
+      cadenceType: parsed.cadenceType,
+      weeklyPeaksTarget: parsed.weeklyPeaksTarget
     };
     
     const { data: links, error: linksError } = await supabase

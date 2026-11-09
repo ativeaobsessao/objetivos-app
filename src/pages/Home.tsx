@@ -99,7 +99,6 @@ function SortableGoalItem({ goal, index, total }: { goal: any, index: number, to
             <span className={`text-[11px] sm:text-xs font-bold px-2.5 py-0.5 whitespace-nowrap rounded-full ${badgeClasses}`}>
               {badgeText}
             </span>
-            <span className="text-[11px] sm:text-xs text-gray-500 font-medium whitespace-nowrap truncate">{progress}% concluído</span>
           </div>
         </div>
         

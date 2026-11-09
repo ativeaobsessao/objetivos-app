@@ -1,4 +1,5 @@
 export type GoalStatus = 'active' | 'completed';
+export type GoalCadenceType = 'daily' | 'weekly_peaks';
 
 export interface Goal {
   id: string;
@@ -8,6 +9,8 @@ export interface Goal {
   status: GoalStatus;
   createdAt: string; // ISO 8601
   position?: number;
+  cadenceType?: GoalCadenceType;
+  weeklyPeaksTarget?: number;
 }
 
 export interface Task {

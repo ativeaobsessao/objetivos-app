@@ -4,7 +4,7 @@ import { useGoalView } from '../hooks/useDomain';
 import { domainService } from '../services/domainService';
 import { MobileLayout } from '../components/MobileLayout';
 import { ArrowLeft, MoreHorizontal, Calendar as CalendarIcon, Check, ChevronRight } from 'lucide-react';
-import { formatLocal, parseLocal, formatDateFull, getDiffDaysLocal } from '../utils/dates';
+import { formatLocal, parseLocal, formatDateFull, getDiffDaysLocal, getTodayLocal, getDaysInRange } from '../utils/dates';
 import { GoalTasks } from '../components/GoalTasks';
 import { GoalCalendar } from '../components/GoalCalendar';
 import { GoalAchievements } from '../components/GoalAchievements';
@@ -39,10 +39,43 @@ export default function ObjectiveDetail() {
     );
   }
 
+  const goalDaysList = getDaysInRange(goal.startDate, goal.endDate);
+  const totalGoalDays = goalDaysList.length;
+  const markedDaysCount = marks.length;
+
+  const isWeeklyPeaks = goal.cadenceType === 'weekly_peaks';
+  const weeklyPeaksTarget = goal.weeklyPeaksTarget || 3;
+  const totalWeeks = Math.max(1, Math.ceil(totalGoalDays / 7));
+  const totalPlannedPeaks = isWeeklyPeaks ? totalWeeks * weeklyPeaksTarget : totalGoalDays;
+
+  // Porcentagem da rota
+  const routePercent = totalPlannedPeaks > 0
+    ? Math.min(100, Math.round((markedDaysCount / totalPlannedPeaks) * 100))
+    : 0;
+  
+  const today = getTodayLocal();
+  const daysElapsed = today >= goal.startDate 
+    ? Math.min(totalGoalDays, getDiffDaysLocal(goal.startDate, today) + 1)
+    : 0;
+
+  // Picos marcados na semana atual (segunda a domingo)
+  const todayDateObj = parseLocal(today);
+  const currentDayOfWeek = todayDateObj.getDay(); // 0 domingo, 1 segunda
+  const mondayOffset = currentDayOfWeek === 0 ? -6 : 1 - currentDayOfWeek;
+  const mondayObj = new Date(todayDateObj);
+  mondayObj.setDate(mondayObj.getDate() + mondayOffset);
+  const sundayObj = new Date(mondayObj);
+  sundayObj.setDate(sundayObj.getDate() + 6);
+  
+  const mondayStr = formatLocal(mondayObj);
+  const sundayStr = formatLocal(sundayObj);
+  
+  const marksThisWeek = marks.filter(m => m.markDate >= mondayStr && m.markDate <= sundayStr).length;
+
   return (
     <MobileLayout className="p-6">
       <header className="flex justify-between items-start py-4 mb-6">
-        <button onClick={() => navigate('/')} className="p-2 -ml-2 text-gray-900 dark:text-gray-100 active:bg-gray-100 rounded-full transition-colors">
+        <button onClick={() => navigate('/')} className="p-2 -ml-2 text-gray-900 dark:text-gray-100 active:bg-gray-100 dark:active:bg-gray-800 rounded-full transition-colors">
           <ArrowLeft className="w-6 h-6" />
         </button>
         <div className="flex items-center gap-2">
@@ -87,6 +120,95 @@ export default function ObjectiveDetail() {
                 <span className="font-bold text-red-700 dark:text-red-300 text-sm mt-0.5">{formatDateFull(goal.endDate)}</span>
               </div>
             </button>
+
+            {/* Badge de Ritmo do Objetivo */}
+            <div className="flex items-center gap-2 bg-emerald-50/70 dark:bg-emerald-950/30 px-3.5 py-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-900/40 text-left">
+              <div className="flex flex-col">
+                <span className="font-bold tracking-widest text-emerald-600/90 dark:text-emerald-400 uppercase text-[10px] leading-tight">
+                  Ritmo
+                </span>
+                <span className="font-bold text-emerald-800 dark:text-emerald-300 text-sm mt-0.5">
+                  {isWeeklyPeaks ? `Picos Semanais (${weeklyPeaksTarget}x)` : 'Diário'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Seção Rota Percorrida */}
+          <div className="mt-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800/80 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">
+                  Rota Percorrida
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+                  {routePercent}%
+                </span>
+                <span className="text-xs font-medium text-gray-400">concluído</span>
+              </div>
+            </div>
+
+            {/* Barra de Progresso Verde Gradual */}
+            <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3 overflow-hidden p-0.5 border border-gray-200/50 dark:border-gray-700/50">
+              <div 
+                className="bg-gradient-to-r from-emerald-500 to-green-400 h-full rounded-full transition-all duration-700 ease-out shadow-sm"
+                style={{ width: `${Math.min(100, Math.max(0, routePercent))}%` }}
+              />
+            </div>
+
+            {/* Métricas e Detalhes da Rota */}
+            <div className="flex items-center justify-between mt-3 text-xs text-gray-500 dark:text-gray-400">
+              <span className="font-medium">
+                {isWeeklyPeaks ? (
+                  <>
+                    <strong className="text-gray-900 dark:text-gray-100 font-bold">{markedDaysCount}</strong> de <strong className="text-gray-900 dark:text-gray-100 font-bold">{totalPlannedPeaks}</strong> {totalPlannedPeaks === 1 ? 'pico concluído' : 'picos totais'}
+                  </>
+                ) : (
+                  <>
+                    <strong className="text-gray-900 dark:text-gray-100 font-bold">{markedDaysCount}</strong> de <strong className="text-gray-900 dark:text-gray-100 font-bold">{totalGoalDays}</strong> {totalGoalDays === 1 ? 'dia marcado' : 'dias totais'}
+                  </>
+                )}
+              </span>
+              <span className="text-[11px] text-gray-400">
+                {daysElapsed > 0 ? `${daysElapsed}º dia de jornada` : 'Início hoje'}
+              </span>
+            </div>
+
+            {/* Indicador de Desempenho e Ritmo da Semana */}
+            {isWeeklyPeaks ? (
+              <div className="mt-3.5 pt-3 border-t border-gray-100 dark:border-gray-800/60 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-gray-500 dark:text-gray-400 text-[11px]">
+                    Esta semana:
+                  </span>
+                  <span className="font-bold text-gray-800 dark:text-gray-200">
+                    {marksThisWeek} de {weeklyPeaksTarget} {weeklyPeaksTarget === 1 ? 'pico' : 'picos'}
+                  </span>
+                </div>
+                <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
+                  marksThisWeek >= weeklyPeaksTarget
+                    ? 'bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-300'
+                    : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                }`}>
+                  {marksThisWeek >= weeklyPeaksTarget ? 'Meta semanal batida!' : `${weeklyPeaksTarget - marksThisWeek} restantes`}
+                </span>
+              </div>
+            ) : (
+              totalGoalDays > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800/60 flex items-center justify-between text-[11px]">
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Ritmo da rota:
+                  </span>
+                  <span className="font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full">
+                    {markedDaysCount === 0 ? 'Dê o primeiro passo marcando um dia' :
+                     markedDaysCount >= daysElapsed ? 'Excelente ritmo (consistência alta)' :
+                     `${markedDaysCount} dias ativos na rota`}
+                  </span>
+                </div>
+              )
+            )}
           </div>
         </div>
 
