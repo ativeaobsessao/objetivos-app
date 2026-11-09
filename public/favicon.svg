@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#10b981" />
-      <stop offset="100%" stop-color="#22c55e" />
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#4ADE80" />
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="128" fill="url(#emeraldGrad)"/>
+  <rect width="512" height="512" rx="136" fill="url(#emeraldGrad)"/>
   <path 
-    d="M 136 264 L 224 352 L 376 176" 
+    d="M 140 268 L 224 352 L 372 172" 
     fill="none" 
     stroke="#F4F9F9" 
-    stroke-width="56" 
+    stroke-width="58" 
     stroke-linecap="round" 
     stroke-linejoin="round"
   />

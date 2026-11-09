@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Gradiente idêntico ao da barra de progresso (emerald-500 -> green-400) -->
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#4ADE80" />
+    </linearGradient>
+
+    <!-- Brilho especular sutil característico do design refinado da Apple -->
+    <linearGradient id="highlightGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.18" />
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.0" />
+    </linearGradient>
+
+    <!-- Sombra sutil interna do check para máxima legibilidade e profundidade -->
+    <filter id="checkShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#047857" flood-opacity="0.32" />
+    </filter>
+  </defs>
+
+  <!-- Fundo com a silhueta contínua do iOS (squircle superellipse) -->
+  <path d="M 0 115 C 0 35, 35 0, 115 0 L 397 0 C 477 0, 512 35, 512 115 L 512 397 C 512 477, 477 512, 397 512 L 115 512 C 35 512, 0 477, 0 397 Z" fill="url(#emeraldGrad)" />
+
+  <!-- Reflexo superior sutil -->
+  <path d="M 0 115 C 0 35, 35 0, 115 0 L 397 0 C 477 0, 512 35, 512 115 L 512 397 C 512 477, 477 512, 397 512 L 115 512 C 35 512, 0 477, 0 397 Z" fill="url(#highlightGrad)" />
+
+  <!-- Símbolo de Check centralizado e balanceado em branco gélido #F4F9F9 -->
+  <g filter="url(#checkShadow)">
+    <path 
+      d="M 148 268 L 226 346 L 364 178" 
+      fill="none" 
+      stroke="#F4F9F9" 
+      stroke-width="50" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+    />
+  </g>
+</svg>
