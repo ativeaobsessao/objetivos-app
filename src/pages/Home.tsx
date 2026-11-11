@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoals } from '../hooks/useDomain';
-import { Plus, GripVertical, Calendar as CalendarIcon, ChevronRight } from 'lucide-react';
+import { Plus, GripVertical, Calendar as CalendarIcon, ChevronRight, Timer as TimerIcon } from 'lucide-react';
 import { MobileLayout } from '../components/MobileLayout';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { UserMenu } from '../components/UserMenu';
 import { domainService } from '../services/domainService';
+import { useStopwatch } from '../contexts/StopwatchContext';
 import { 
   DndContext, 
   closestCenter, 
@@ -120,6 +121,8 @@ export default function Home() {
   const [quote, setQuote] = useState(QUOTES[0]);
   const [optimisticGoals, setOptimisticGoals] = useState<any[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  
+  const { isActive, isRunning, startStopwatch, setIsExpanded } = useStopwatch();
   
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -277,6 +280,55 @@ export default function Home() {
               <Plus className="w-5 h-5" />
               <span>Novo objetivo</span>
             </Link>
+
+            {/* SESSÃO DE CRONÔMETRO */}
+            <div className="mt-6 mb-8 pt-6 border-t border-gray-100 dark:border-gray-800/80">
+              <div className="flex items-center justify-between mb-3 px-1">
+                <span className="text-xs font-bold tracking-widest text-gray-400 uppercase">
+                  Cronômetro
+                </span>
+                {isActive && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    {isRunning ? 'Em contagem' : 'Pausado'}
+                  </span>
+                )}
+              </div>
+
+              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-5 shadow-sm flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 dark:from-emerald-950/40 dark:to-emerald-900/20 border border-emerald-200/50 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <TimerIcon className="w-6 h-6 stroke-[2.2]" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-base text-gray-900 dark:text-gray-100">
+                      Temporizador
+                    </span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                      Acompanhe o tempo em tempo real
+                    </span>
+                  </div>
+                </div>
+
+                {isActive ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsExpanded(true)}
+                    className="py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm active:scale-95 transition-all shadow-sm"
+                  >
+                    Ver relógio
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={startStopwatch}
+                    className="py-3 px-4 rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-black font-semibold text-sm active:scale-95 transition-all shadow-sm"
+                  >
+                    Iniciar
+                  </button>
+                )}
+              </div>
+            </div>
           </>
         )}
       </main>

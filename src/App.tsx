@@ -10,6 +10,8 @@ import ObjectiveDetail from './pages/ObjectiveDetail';
 import Auth from './pages/Auth';
 import ResetPassword from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { StopwatchProvider } from './contexts/StopwatchContext';
+import { SovereignStopwatch } from './components/SovereignStopwatch';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function AuthRoute() {
@@ -21,28 +23,31 @@ function AuthRoute() {
 export default function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/auth" element={<AuthRoute />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          } />
-          <Route path="/create" element={
-            <ProtectedRoute>
-              <CreateObjective />
-            </ProtectedRoute>
-          } />
-          <Route path="/objective/:id" element={
-            <ProtectedRoute>
-              <ObjectiveDetail />
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </Router>
+      <StopwatchProvider>
+        <Router>
+          <SovereignStopwatch />
+          <Routes>
+            <Route path="/auth" element={<AuthRoute />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            } />
+            <Route path="/create" element={
+              <ProtectedRoute>
+                <CreateObjective />
+              </ProtectedRoute>
+            } />
+            <Route path="/objective/:id" element={
+              <ProtectedRoute>
+                <ObjectiveDetail />
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </Router>
+      </StopwatchProvider>
     </AuthProvider>
   );
 }
