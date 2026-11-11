@@ -7,7 +7,6 @@ import { ArrowLeft, MoreHorizontal, Calendar as CalendarIcon, Check, ChevronRigh
 import { formatLocal, parseLocal, formatDateFull, getDiffDaysLocal, getTodayLocal, getDaysInRange } from '../utils/dates';
 import { GoalTasks } from '../components/GoalTasks';
 import { GoalCalendar } from '../components/GoalCalendar';
-import { GoalAchievements } from '../components/GoalAchievements';
 import { UserMenu } from '../components/UserMenu';
 import { ThemeToggle } from '../components/ThemeToggle';
 
@@ -214,7 +213,6 @@ export default function ObjectiveDetail() {
 
         <GoalTasks goalId={goal.id} tasks={tasks} onUpdate={reload} />
         <GoalCalendar goal={goal} marks={marks} tasks={tasks} onUpdate={reload} />
-        <GoalAchievements marks={marks} goalEndDate={goal.endDate} />
       </main>
 
       {showMenu && (
